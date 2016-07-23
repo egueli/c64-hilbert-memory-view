@@ -2,6 +2,9 @@ function setup() {
   createCanvas(512, 512);
 
   printMap();
+
+  // Uncomment this to save the map to PNG.
+  //save('map.png');
 }
 
 function printMap() {
