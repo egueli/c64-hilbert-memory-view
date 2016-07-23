@@ -1,3 +1,5 @@
+var mapScale = 2;
+
 function setup() {
   createCanvas(512, 512);
 
@@ -12,9 +14,9 @@ function printMap() {
 
   function addrBlock(color, desc) {
     return function(x, y, size) {
-      x *= 2;
-      y *= 2;
-      size *= 2;
+      x *= mapScale;
+      y *= mapScale;
+      size *= mapScale;
       fill(color);
       rect(x, y, size, size);
 
