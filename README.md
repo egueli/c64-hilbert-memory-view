@@ -3,7 +3,8 @@ I want to see how my favorite 8-bit computer walks into its address space, repre
 
 Something similar to https://xkcd.com/195/ (Map of the Internet), but for the Commodore 64's 64K of memory. And maybe animated, working alongside an emulator. And in real time.
 
-![The C64 memory map, showed as a Hilbert curve](/imageGenerator/example_map.png?raw=true "Optional Title")
+![The C64 memory map, showed as a Hilbert curve](/imageGenerator/example_map.png?raw=true)
+The C64 memory map, showed as a Hilbert curve. The white spots are the instructions executed during the startup.
 
 
 

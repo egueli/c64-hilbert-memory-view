@@ -1,12 +1,45 @@
 var mapScale = 2;
 
+var trace;
+var reads = [];
+
+function preload() {
+  trace = loadStrings('assets/trace_reset.txt');
+}
+
 function setup() {
   createCanvas(512, 512);
 
   printMap();
 
+  processTrace();
+
   // Uncomment this to save the map to PNG.
   //save('map.png');
+}
+
+function processTrace() {
+  for (var i=0; i<trace.length; i++) {
+    var line = trace[i];
+    var tokens = line.split(" ");
+    var addressHex = tokens[1];
+    var address = parseInt(addressHex, 16);
+    if (reads[address] === undefined) {
+      reads[address] = 1;
+    }
+    else {
+      reads[address]++;
+    }
+  }
+
+  for (address in reads) {
+    var xy = hilbert.d2xy(8, address);
+    noStroke();
+    fill(255);
+    rect(xy[0] * mapScale, xy[1] * mapScale, mapScale, mapScale);
+  }
+
+  trace = null;
 }
 
 function printMap() {
@@ -54,7 +87,6 @@ function printMap() {
 }
 
 function hilbertBlock(maxLevel, location, sizeLinear, callback) {
-  console.log(sizeLinear);
   var level = Math.log2(sizeLinear) / 2;
   var size = 1 << level;
 
