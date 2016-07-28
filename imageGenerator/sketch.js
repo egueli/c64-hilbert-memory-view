@@ -62,7 +62,9 @@ function processTrace() {
 
 function printMap() {
   var mg = mapGraphics;
-  mg.rect(0, 0, 256, 256);
+
+  mg.textAlign(CENTER, CENTER);
+  mg.textSize(6);
 
   function addrBlock(color, desc) {
     return function(x, y, size) {
@@ -73,7 +75,6 @@ function printMap() {
       mg.rect(x, y, size, size);
 
       mg.fill(128);
-      mg.textAlign(CENTER, CENTER);
       mg.text(desc, x, y, size, size);
     };
   }
@@ -107,7 +108,7 @@ function printMap() {
 
 function hilbertBlock(maxLevel, location, sizeLinear, callback) {
   var level = Math.log2(sizeLinear) / 2;
-  var size = 1 << level;
+  var size = 1 << (level - 1);
 
   var xy = hilbert.d2xy(maxLevel - level, location / sizeLinear);
   var x = xy[0] * size;
