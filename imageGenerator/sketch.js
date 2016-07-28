@@ -1,9 +1,12 @@
 var mapScale = 2;
-var timeScale = 10;
+var timeScale = 100;
 var trace;
 var frames = [];
 
 var fps = 60;
+var traceClearAlpha = 1;
+var startAtTime = 2.0;  // jump to a bit before end of memory test cycle
+
 var microsecsPerFrame = Math.floor(1000000 / fps);
 
 var traceGraphics;
@@ -120,7 +123,8 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 }
 
 
-var frameNum = 50; //jump after memory test cycle
+var frameNum = startAtTime * fps * timeScale;
+
 function draw() {
   frameNum++;
 
@@ -148,7 +152,7 @@ function draw() {
 function updateTraceGraphics(frameData) {
   var tg = traceGraphics;
 
-  tg.background(0, 64);
+  tg.background(0, traceClearAlpha);
 
   if (!frameData)
     return;
