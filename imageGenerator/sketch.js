@@ -3,8 +3,8 @@ var timeScale = 30;
 var trace;
 var frames = [];
 
-var frameRate = 15;
-var microsecsPerFrame = Math.floor(1000000 / frameRate);
+var fps = 15;
+var microsecsPerFrame = Math.floor(1000000 / fps);
 
 var traceGraphics;
 var mapGraphics;
@@ -17,7 +17,7 @@ function setup() {
   createCanvas(512, 512);
   traceGraphics = createGraphics(512, 512);
   mapGraphics = createGraphics(512, 512);
-  setFrameRate(frameRate);
+  setFrameRate(fps);
 
   printMap();
 
@@ -119,7 +119,6 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 
 var frameNum = 50; //jump after memory test cycle
 function draw() {
-  console.log(frameNum);
   frameNum++;
 
   var frameData = frames[frameNum];
@@ -152,7 +151,6 @@ function updateTraceGraphics(frameData) {
     return;
 
   var reads = frameData.reads;
-  console.log("instructions: " + reads.length);
 
   for (address in reads) {
     var xy = hilbert.d2xy(8, address);
