@@ -6,12 +6,15 @@ var frames = [];
 var frameRate = 15;
 var microsecsPerFrame = Math.floor(1000000 / frameRate);
 
+var traceGraphics;
+
 function preload() {
   trace = loadStrings('assets/trace_reset.txt');
 }
 
 function setup() {
   createCanvas(512, 512);
+  traceGraphics = createGraphics(512, 512);
   setFrameRate(frameRate);
 
   printMap();
@@ -110,14 +113,32 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
   callback(x, y, size);
 }
 
+
 var frameNum = 50; //jump after memory test cycle
 function draw() {
   console.log(frameNum);
   frameNum++;
 
-  background(0, 64);
-
   var frameData = frames[frameNum];
+
+  background(0);
+  updateTraceGraphics(frameData);
+  image(traceGraphics, 0, 0);
+
+  if (frameData) {
+    stroke(255);
+    fill(255);
+    textSize(40);
+    textAlign(LEFT, TOP);
+    text(frameData.time, 0, 0, 288, 288)
+  }
+}
+
+function updateTraceGraphics(frameData) {
+  var tg = traceGraphics;
+
+  tg.background(0, 64);
+
   if (!frameData)
     return;
 
@@ -126,20 +147,8 @@ function draw() {
 
   for (address in reads) {
     var xy = hilbert.d2xy(8, address);
-    noStroke();
-    fill(255);
-    rect(xy[0] * mapScale, xy[1] * mapScale, mapScale, mapScale);
+    tg.noStroke();
+    tg.fill(255);
+    tg.rect(xy[0], xy[1], 1, 1);
   }
-
-  stroke(255);
-  textSize(40);
-  textAlign(LEFT, TOP);
-  text(frameData.time, 0, 0, 288, 288)
-
-  // if (mouseIsPressed) {
-  //   fill(0);
-  // } else {
-  //   fill(255);
-  // }
-  // ellipse(mouseX, mouseY, 80, 80);
 }
