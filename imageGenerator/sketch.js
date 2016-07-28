@@ -1,9 +1,9 @@
 var mapScale = 2;
-var timeScale = 30;
+var timeScale = 10;
 var trace;
 var frames = [];
 
-var fps = 15;
+var fps = 60;
 var microsecsPerFrame = Math.floor(1000000 / fps);
 
 var traceGraphics;
