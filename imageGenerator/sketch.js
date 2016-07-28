@@ -138,6 +138,9 @@ function draw() {
     textAlign(LEFT, TOP);
     text(frameData.time, 0, 0, 288, 288)
   }
+  else {
+    noLoop(); // stop
+  }
 }
 
 function updateTraceGraphics(frameData) {
