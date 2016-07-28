@@ -1,9 +1,10 @@
 var mapScale = 2;
-
+var timeScale = 30;
 var trace;
 var frames = [];
 
-var microsecsPerFrame = Math.floor(1000000 / 30);
+var frameRate = 15;
+var microsecsPerFrame = Math.floor(1000000 / frameRate);
 
 function preload() {
   trace = loadStrings('assets/trace_reset.txt');
@@ -11,7 +12,7 @@ function preload() {
 
 function setup() {
   createCanvas(512, 512);
-  setFrameRate(1);
+  setFrameRate(frameRate);
 
   printMap();
 
@@ -27,11 +28,14 @@ function processTrace() {
     var tokens = line.split(" ");
     var timestamp = tokens[0];
 
-    var frame = Math.floor(timestamp / microsecsPerFrame);
+    var frame = Math.floor(timestamp / microsecsPerFrame * timeScale);
     var reads;
     if (!frames[frame]) {
       reads = [];
-      frames[frame] = {reads: reads};
+      frames[frame] = {
+        time: timestamp / 1000000,
+        reads: reads
+      };
     }
     else {
       reads = frames[frame].reads;
@@ -106,18 +110,20 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
   callback(x, y, size);
 }
 
-var frameNum = 0;
+var frameNum = 50; //jump after memory test cycle
 function draw() {
   console.log(frameNum);
   frameNum++;
+
+  background(0, 64);
 
   var frameData = frames[frameNum];
   if (!frameData)
     return;
 
   var reads = frameData.reads;
-  console.log("reads: " + reads.length);
-  
+  console.log("instructions: " + reads.length);
+
   for (address in reads) {
     var xy = hilbert.d2xy(8, address);
     noStroke();
@@ -125,6 +131,10 @@ function draw() {
     rect(xy[0] * mapScale, xy[1] * mapScale, mapScale, mapScale);
   }
 
+  stroke(255);
+  textSize(40);
+  textAlign(LEFT, TOP);
+  text(frameData.time, 0, 0, 288, 288)
 
   // if (mouseIsPressed) {
   //   fill(0);
