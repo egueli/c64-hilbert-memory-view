@@ -9,14 +9,16 @@ var microsecsPerFrame = Math.floor(1000000 / fps);
 var traceGraphics;
 var mapGraphics;
 
+var density = window.devicePixelRatio; // happens to be 2 on os x with retina display
+
 function preload() {
   trace = loadStrings('assets/trace_reset.txt');
 }
 
 function setup() {
   createCanvas(512, 512);
-  traceGraphics = createGraphics(512, 512);
-  mapGraphics = createGraphics(512, 512);
+  traceGraphics = createGraphics(512 * density, 512 * density);
+  mapGraphics = createGraphics(512 * density, 512 * density);
   setFrameRate(fps);
 
   printMap();
@@ -64,13 +66,13 @@ function printMap() {
   var mg = mapGraphics;
 
   mg.textAlign(CENTER, CENTER);
-  mg.textSize(6);
+  mg.textSize(12);
 
   function addrBlock(color, desc) {
     return function(x, y, size) {
-      x *= mapScale;
-      y *= mapScale;
-      size *= mapScale;
+      x *= mapScale * density;
+      y *= mapScale * density;
+      size *= mapScale * density;
       mg.fill(color);
       mg.rect(x, y, size, size);
 
@@ -125,10 +127,10 @@ function draw() {
   var frameData = frames[frameNum];
 
   background(0);
-  image(mapGraphics, 0, 0);
+  image(mapGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   updateTraceGraphics(frameData);
   blendMode(ADD);
-  image(traceGraphics, 0, 0);
+  image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   blendMode(BLEND);
 
   if (frameData) {
@@ -157,6 +159,6 @@ function updateTraceGraphics(frameData) {
     var xy = hilbert.d2xy(8, address);
     tg.noStroke();
     tg.fill(255);
-    tg.rect(xy[0], xy[1], 1, 1);
+    tg.rect(xy[0] * mapScale, xy[1] * mapScale, mapScale, mapScale);
   }
 }
