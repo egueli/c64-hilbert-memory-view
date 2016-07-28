@@ -7,6 +7,7 @@ var frameRate = 15;
 var microsecsPerFrame = Math.floor(1000000 / frameRate);
 
 var traceGraphics;
+var mapGraphics;
 
 function preload() {
   trace = loadStrings('assets/trace_reset.txt');
@@ -15,6 +16,7 @@ function preload() {
 function setup() {
   createCanvas(512, 512);
   traceGraphics = createGraphics(512, 512);
+  mapGraphics = createGraphics(512, 512);
   setFrameRate(frameRate);
 
   printMap();
@@ -59,19 +61,20 @@ function processTrace() {
 }
 
 function printMap() {
-  rect(0, 0, 256, 256);
+  var mg = mapGraphics;
+  mg.rect(0, 0, 256, 256);
 
   function addrBlock(color, desc) {
     return function(x, y, size) {
       x *= mapScale;
       y *= mapScale;
       size *= mapScale;
-      fill(color);
-      rect(x, y, size, size);
+      mg.fill(color);
+      mg.rect(x, y, size, size);
 
-      fill(128);
-      textAlign(CENTER, CENTER);
-      text(desc, x, y, size, size);
+      mg.fill(128);
+      mg.textAlign(CENTER, CENTER);
+      mg.text(desc, x, y, size, size);
     };
   }
   var ramColor = '#004000';
@@ -122,8 +125,11 @@ function draw() {
   var frameData = frames[frameNum];
 
   background(0);
+  image(mapGraphics, 0, 0);
   updateTraceGraphics(frameData);
+  blendMode(ADD);
   image(traceGraphics, 0, 0);
+  blendMode(BLEND);
 
   if (frameData) {
     stroke(255);
