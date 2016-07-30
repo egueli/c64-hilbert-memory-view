@@ -3,15 +3,17 @@
 import socket
 import re
 
+
 def readMonitorLine(sock, recv_buffer=4096):
 	buffer = ''
 	data = True
+	promptEnd = ") "
 	while data:
 		data = sock.recv(recv_buffer)
 		buffer += data
 
-		while buffer.find(") ") != -1:
-			output, buffer = buffer.split(") ", 1)
+		while buffer.find(promptEnd) != -1:
+			output, buffer = buffer.split(promptEnd, 1)
 			lines = output.split("\n")
 			yield lines[:-1]
 	return
