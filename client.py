@@ -17,6 +17,19 @@ def readMonitorLine(sock, recv_buffer=4096):
 	return
 
 
+def processLines(lines):
+	if len(lines) != 1:
+		return
+
+	line = lines[0]
+	#print line
+	m = re.search('...([0-9a-f]+).{14}([A-Z]{3}) ([^ ]+).*  ([0-9]+)', line)
+	if not m:
+		return
+
+	print m.group(4), m.group(1), m.group(2), m.group(3)
+
+
 TCP_IP = '127.0.0.1'
 TCP_PORT = 6510
 MESSAGE = "\nreset\n"
@@ -26,17 +39,9 @@ sock.connect((TCP_IP, TCP_PORT))
 sock.send(MESSAGE)
 
 for lines in readMonitorLine(sock):
+	processLines(lines);	
 	sock.send("step\n")
-	if len(lines) != 1:
-		continue
 
-	line = lines[0]
-	#print line
-	m = re.search('...([0-9a-f]+).{14}([A-Z]{3}) ([^ ]+).*  ([0-9]+)', line)
-	if not m:
-		continue
-
-	print m.group(4), m.group(1), m.group(2), m.group(3)
 
 
 sock.close()
