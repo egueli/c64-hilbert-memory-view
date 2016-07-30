@@ -15,15 +15,11 @@ def readMonitorLine(sock, recv_buffer=4096):
 		while buffer.find(promptEnd) != -1:
 			output, buffer = buffer.split(promptEnd, 1)
 			lines = output.split("\n")
-			yield lines[:-1]
+			yield lines[0]
 	return
 
 
-def processLines(lines):
-	if len(lines) != 1:
-		return
-
-	line = lines[0]
+def processLine(line):
 	#print line
 	m = re.search('...([0-9a-f]+).{14}(.+) - A:(..) X:(..) Y:(..).* ([0-9]+)', line)
 	if not m:
@@ -50,8 +46,8 @@ sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 sock.connect((TCP_IP, TCP_PORT))
 sock.send(MESSAGE)
 
-for lines in readMonitorLine(sock):
-	processLines(lines);	
+for line in readMonitorLine(sock):
+	processLine(line);	
 	sock.send("step\n")
 
 
