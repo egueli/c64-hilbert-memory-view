@@ -19,7 +19,7 @@ def readMonitorLine(sock, recv_buffer=4096):
 	return
 
 
-def processLine(line):
+def processStepLine(line):
 	#print line
 	m = re.search('...([0-9a-f]+).{14}(.+) - A:(..) X:(..) Y:(..).* ([0-9]+)', line)
 	if not m:
@@ -47,7 +47,7 @@ sock.connect((TCP_IP, TCP_PORT))
 sock.send(MESSAGE)
 
 for line in readMonitorLine(sock):
-	processLine(line);	
+	processStepLine(line);	
 	sock.send("step\n")
 
 
