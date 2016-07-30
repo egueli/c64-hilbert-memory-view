@@ -3,23 +3,39 @@
 import socket
 import re
 
+class ViceRemoteMonitorTalker:
+	def __init__(self):
+		TCP_IP = '127.0.0.1'
+		TCP_PORT = 6510
 
-def readMonitorLine(sock, recv_buffer=4096):
-	buffer = ''
-	data = True
-	promptEnd = ") "
-	while data:
-		data = sock.recv(recv_buffer)
-		buffer += data
+		self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+		self.sock.connect((TCP_IP, TCP_PORT))
 
-		while buffer.find(promptEnd) != -1:
-			output, buffer = buffer.split(promptEnd, 1)
-			lines = output.split("\n")
-			yield lines[0]
-	return
+		self.buffer = ''
+		self.promptEnd = ") " 
+
+	def talk(self, command):
+		self.sock.send(command + "\n")
+		return self.receive();
+
+	def receive(self):
+		data = True
+		while data:
+			data = self.sock.recv(4096)
+			self.buffer += data
+
+			if self.buffer.find(self.promptEnd) != -1:
+				output, self.buffer = self.buffer.split(self.promptEnd, 1)
+				lines = output.split("\n")
+				return lines[:-1]
 
 
-def processStepLine(line):
+def processStepLines(lines):
+	if (len(lines) != 1):
+		return
+		
+	line = lines[0]
 	#print line
 	m = re.search('...([0-9a-f]+).{14}(.+) - A:(..) X:(..) Y:(..).* ([0-9]+)', line)
 	if not m:
@@ -37,18 +53,11 @@ def processStepLine(line):
 		print time, ip, instruction, a, x, y, flags
 
 
-TCP_IP = '127.0.0.1'
-TCP_PORT = 6510
-MESSAGE = "\nreset\n"
+talker = ViceRemoteMonitorTalker()
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-sock.connect((TCP_IP, TCP_PORT))
-sock.send(MESSAGE)
-
-for line in readMonitorLine(sock):
-	processStepLine(line);	
-	sock.send("step\n")
+while True:
+	lines = talker.talk("step")
+	processStepLines(lines);	
 
 
 sock.close()
