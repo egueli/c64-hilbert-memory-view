@@ -14,9 +14,14 @@ class ViceRemoteMonitorTalker:
 
 		self.buffer = ''
 		self.promptEnd = ") " 
+		self.firstTalk = True
 
 	def talk(self, command):
 		self.sock.send(command + "\n")
+		if self.firstTalk == True:
+			self.receive()
+			self.firstTalk = False
+
 		return self.receive();
 
 	def receive(self):
