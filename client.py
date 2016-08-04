@@ -74,6 +74,15 @@ def processStepLines(lines):
 
 talker = ViceRemoteMonitorTalker()
 
+# Triggers a soft reset.
+# The "reset" command doesn't work reliably, as it messes with the monitor
+# state. The "g" command to the reset routine makes the monitor leave, that's
+# why it's preceded by a breakpoint on the same location.
+# Note: the first "step" command will run the instruction after the first of
+# the reset routine.
+talker.talk("break $fce2")
+talker.talk("g $fce2")
+
 while True:
 	lines = talker.talk("step")
 	processStepLines(lines);	
