@@ -6,6 +6,7 @@ var frames = [];
 var fps = 60;
 var traceClearAlpha = 1;
 var startAtTime = 0;
+var stopAtTime = 0.25;
 
 var microsecsPerFrame = Math.floor(1000000 / fps);
 
@@ -142,7 +143,7 @@ function draw() {
   image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   blendMode(BLEND);
 
-  if (frameData) {
+  if (frameData && frameData.time < stopAtTime) {
     stroke(255);
     fill(255);
     textSize(40);
