@@ -146,8 +146,8 @@ function draw() {
     stroke(255);
     fill(255);
     textSize(40);
-    textAlign(LEFT, TOP);
-    text(frameData.time, 0, 0, 288, 288)
+    textAlign(LEFT, BOTTOM);
+    text(frameData.time, 0, 0, 512, 512)
     frameNum++;
   }
   else {
