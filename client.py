@@ -59,17 +59,32 @@ def processStepLines(lines):
 		raise Exception("no match: \"" + line + "\"")
 
 	groups = [m.group(i) for i in range(1, 7)]
-	ip, instruction, a, x, y, time = groups
+	ip, instruction, aHex, xHex, yHex, time = groups
+	print time, ip, "x", instruction
 
-	im = re.search('... \(\$([^)]+)\)', instruction)
-	if not im:
-		print time, ip, instruction, a, x, y
-	else:
-		indirect = im.group(1)
-		print time, ip, instruction, a, x, y, indirect
+	matchAbsoluteIndexed = re.search('(...) \$([0-9a-f]{4}),([XY])', instruction)
+	if matchAbsoluteIndexed:
+		opcode, addressHex, register = [matchAbsoluteIndexed.group(i) for i in range(1, 4)]
+		if register == 'X':
+			address = int(addressHex, 16) + int(xHex, 16)
+		else:
+			address = int(addressHex, 16) + int(yHex, 16)
 
-		memlines = talker.talk('mem ' + indirect + ' ' + indirect)
-		print memlines[0]
+		direction = '?'
+		if opcode == 'STA':
+			direction = 'w'
+
+		print time, "%04x"% address, direction
+
+	# im = re.search('... \(\$([^)]+)\)', instruction)
+	# if not im:
+	# 	print time, ip, instruction, a, x, y
+	# else:
+	# 	indirect = im.group(1)
+	# 	print time, ip, instruction, a, x, y, indirect
+
+	# 	memlines = talker.talk('mem ' + indirect + ' ' + indirect)
+	# 	print memlines[0]
 
 
 talker = ViceRemoteMonitorTalker()
