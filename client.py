@@ -68,6 +68,7 @@ directions = {
 	'ROL': 'rw',
 	'ROR': 'rw',
 	'SBC': 'r',
+	'BIT': 'r',
 	'JMP': None,
 	'JSR': None,
 	'BPL': None,
@@ -164,13 +165,15 @@ def processStepLines(lines):
 		print time, "%04x" % address, direction(opcode)
 		return
 
-	# im = re.search('... \(\$([^)]+)\)', instruction)
-	# if not im:
-	# 	print time, ip, instruction, a, x, y
-	# else:
-	# 	indirect = im.group(1)
-	# 	print time, ip, instruction, a, x, y, indirect
+	matchIndirectJMP = re.search('JMP \(\$(\S\S\S\S)\)  ', instruction)
+	if matchIndirectJMP:
+		addressHex = matchIndirectJMP.group(1)
+		address = int(addressHex, 16)
+		print time, "%04x" % address, 'r'
+		print time, "%04x" % (address + 1), 'r'
+		return
 
+	
 	raise Exception("unrecognized instruction: " + instruction)
 
 
