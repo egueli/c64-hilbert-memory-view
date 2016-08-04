@@ -38,8 +38,8 @@ class ViceRemoteMonitorTalker:
 
 def processStepLines(lines):
 	if (len(lines) != 1):
-		return
-		
+		raise Exception("... line?")
+
 	line = lines[0]
 	#print line
 	m = re.search('...([0-9a-f]+).{14}(.+) - A:(..) X:(..) Y:(..).* ([0-9]+)', line)
