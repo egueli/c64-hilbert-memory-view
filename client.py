@@ -86,6 +86,9 @@ def direction(opcode):
 
 def processStepLines(lines):
 	if (len(lines) != 1):
+		print len(lines), "lines??"
+		for line in lines:
+			print line
 		raise Exception("... line?")
 
 	line = lines[0]
