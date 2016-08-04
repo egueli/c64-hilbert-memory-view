@@ -188,8 +188,9 @@ talker = ViceRemoteMonitorTalker()
 # why it's preceded by a breakpoint on the same location.
 # Note: the first "step" command will run the instruction after the first of
 # the reset routine.
-talker.talk("break $fce2")
-talker.talk("g $fce2")
+startAt = "$fce2"
+talker.talk("break " + startAt)
+talker.talk("g " + startAt)
 
 while True:
 	lines = talker.talk("step")
