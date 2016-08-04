@@ -5,7 +5,7 @@ var frames = [];
 
 var fps = 60;
 var traceClearAlpha = 1;
-var startAtTime = 2.0;  // jump to a bit before end of memory test cycle
+var startAtTime = 0;
 
 var microsecsPerFrame = Math.floor(1000000 / fps);
 
@@ -33,10 +33,16 @@ function setup() {
 }
 
 function processTrace() {
+  var startTime = undefined;
   for (var i=0; i<trace.length; i++) {
     var line = trace[i];
     var tokens = line.split(" ");
-    var timestamp = tokens[0];
+    var absoluteTimestamp = tokens[0];
+    if (startTime === undefined) {
+      startTime = absoluteTimestamp;
+    }
+    var timestamp = absoluteTimestamp - startTime;
+
 
     var frame = Math.floor(timestamp / microsecsPerFrame * timeScale);
     var reads;
@@ -146,6 +152,7 @@ function draw() {
   }
   else {
     noLoop(); // stop
+    console.log("no more frame data; stopped");
   }
 }
 
