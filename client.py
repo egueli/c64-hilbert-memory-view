@@ -12,8 +12,7 @@ class ViceRemoteMonitorTalker:
 		self.sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 		self.sock.connect((TCP_IP, TCP_PORT))
 
-		self.buffer = ''
-		self.promptEnd = ") " 
+		self.promptRegex = "\(C:\$[0-9a-f]{4}\) " 
 		self.firstTalk = True
 
 	def talk(self, command):
@@ -21,19 +20,32 @@ class ViceRemoteMonitorTalker:
 		if self.firstTalk == True:
 			self.receive()
 			self.firstTalk = False
+			# print "tt", "skipped first talk"
 
-		return self.receive();
+		lines = self.receive()
+		# for line in lines:
+		#  	print "tt>>", line
+		return lines
 
 	def receive(self):
 		data = True
+		buffer = ""
 		while data:
+			# print "rr before recv, count:", self.count
 			data = self.sock.recv(4096)
-			self.buffer += data
+			buffer += data
+			# print "rr", "|" + data + "|"
 
-			if self.buffer.find(self.promptEnd) != -1:
-				output, self.buffer = self.buffer.split(self.promptEnd, 1)
+			promptMatches = [m for m in re.finditer(self.promptRegex, buffer)]
+			if len(promptMatches) > 0:
+				pos = promptMatches[-1].start()
+				# print "rr", "prompt found at", pos
+				output = buffer[:pos]
 				lines = output.split("\n")
+
 				return lines[:-1]
+			# else:
+			# 	print "rr", "prompt is not here"
 
 
 def processStepLines(lines):
@@ -44,18 +56,20 @@ def processStepLines(lines):
 	#print line
 	m = re.search('...([0-9a-f]+).{14}(.+) - A:(..) X:(..) Y:(..).* ([0-9]+)', line)
 	if not m:
-		return
+		raise Exception("no match: \"" + line + "\"")
 
 	groups = [m.group(i) for i in range(1, 7)]
 	ip, instruction, a, x, y, time = groups
 
-	im = re.search('... \(\$([^)]+)\),Y', instruction)
-	flags = ""
+	im = re.search('... \(\$([^)]+)\)', instruction)
 	if not im:
-		print time, ip, instruction, a, x, y, flags
+		print time, ip, instruction, a, x, y
 	else:
-		flags = flags + "I"
-		print time, ip, instruction, a, x, y, flags
+		indirect = im.group(1)
+		print time, ip, instruction, a, x, y, indirect
+
+		memlines = talker.talk('mem ' + indirect + ' ' + indirect)
+		print memlines[0]
 
 
 talker = ViceRemoteMonitorTalker()
