@@ -47,6 +47,41 @@ class ViceRemoteMonitorTalker:
 			# else:
 			# 	print "rr", "prompt is not here"
 
+directions = {
+	'STA': 'w',
+	'STX': 'w',
+	'STY': 'w',
+	'LDA': 'r',
+	'LDX': 'r',
+	'LDY': 'r',
+	'CMP': 'r',
+	'CPX': 'r',
+	'CPY': 'r',
+	'INC': 'rw',
+	'ORA': 'r',
+	'ADC': 'r',
+	'AND': 'r',
+	'ASL': 'rw',
+	'DEC': 'rw',
+	'EOR': 'r',
+	'LSR': 'rw',
+	'ROL': 'rw',
+	'ROR': 'rw',
+	'SBC': 'r',
+	'JMP': None,
+	'JSR': None,
+	'BPL': None,
+	'BMI': None,
+	'BVC': None,
+	'BVS': None,
+	'BCC': None,
+	'BCS': None,
+	'BNE': None,
+	'BEQ': None,
+}
+def direction(opcode):
+	d = directions[opcode]
+	return d
 
 def processStepLines(lines):
 	if (len(lines) != 1):
@@ -59,10 +94,65 @@ def processStepLines(lines):
 		raise Exception("no match: \"" + line + "\"")
 
 	groups = [m.group(i) for i in range(1, 7)]
-	ip, instruction, aHex, xHex, yHex, time = groups
-	print time, ip, "x", instruction
+	ipHex, instruction, aHex, xHex, yHex, time = groups
+	print time, ipHex, "x", instruction
 
-	matchAbsoluteIndexed = re.search('(...) \$([0-9a-f]{4}),([XY])', instruction)
+	# 1-byte instructions
+
+	matchImplied = re.search('^...  ', instruction)
+	if matchImplied:
+		return
+
+	matchAccumulator = re.search('^... A  ', instruction)
+	if matchAccumulator:
+		return
+
+	# 2-byte instructions
+
+	ip = int(ipHex, 16)
+	print time, "%04x" % (ip + 1), "x"
+
+	matchImmediate = re.search('^... #\$\S\S   ', instruction)
+	if matchImmediate:
+		return
+
+	matchZeroPage = re.search('^(...) \$(\S\S)   ', instruction)
+	if matchZeroPage:
+		addressHex = matchZeroPage.group(2)
+		print time, "00" + addressHex, direction(matchZeroPage.group(1))
+		return
+
+	matchIndirectIndexed = re.search('^(...) \(\$(\S\S)\),Y', instruction)
+	if matchIndirectIndexed:
+		zpAddressHex = matchIndirectIndexed.group(2)
+		zpAddress = int(zpAddressHex, 16)
+		print time, "%04x" % zpAddress, "r"
+		print time, "%04x" % (zpAddress + 1), "r"
+		memlines = talker.talk('mem %04x %04x' % (zpAddress, zpAddress + 1))
+		memline = memlines[0]
+		memMatch = re.match('.........(\S\S) (\S\S)', memline)
+		if not memMatch:
+			raise Exception('unrecognized memory dump output: ' + memline)
+		lowHex = memMatch.group(1)
+		highHex = memMatch.group(2)
+		base = int(highHex + lowHex, 16)
+		effective = base + int(yHex, 16)
+		opcode = matchIndirectIndexed.group(1)
+		print time, "%04x" % effective, direction(opcode)
+		return
+
+	# 3-byte instructions
+	print time, "%04x" % (ip + 2), "x"
+
+	matchAbsolute = re.search('^(...) \$(\S\S\S\S)    ', instruction)
+	if matchAbsolute:
+		opcode = matchAbsolute.group(1)
+		direc = direction(matchAbsolute.group(1))
+		if direc:
+			print time, matchAbsolute.group(2), direc
+		return
+
+	matchAbsoluteIndexed = re.search('(...) \$(\S\S\S\S),([XY])', instruction)
 	if matchAbsoluteIndexed:
 		opcode, addressHex, register = [matchAbsoluteIndexed.group(i) for i in range(1, 4)]
 		if register == 'X':
@@ -70,11 +160,9 @@ def processStepLines(lines):
 		else:
 			address = int(addressHex, 16) + int(yHex, 16)
 
-		direction = '?'
-		if opcode == 'STA':
-			direction = 'w'
 
-		print time, "%04x"% address, direction
+		print time, "%04x" % address, direction(opcode)
+		return
 
 	# im = re.search('... \(\$([^)]+)\)', instruction)
 	# if not im:
@@ -83,8 +171,7 @@ def processStepLines(lines):
 	# 	indirect = im.group(1)
 	# 	print time, ip, instruction, a, x, y, indirect
 
-	# 	memlines = talker.talk('mem ' + indirect + ' ' + indirect)
-	# 	print memlines[0]
+	raise Exception("unrecognized instruction: " + instruction)
 
 
 talker = ViceRemoteMonitorTalker()
