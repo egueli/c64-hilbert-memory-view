@@ -129,11 +129,10 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 }
 
 
-var frameNum = startAtTime * fps * timeScale;
+var startFrame = startAtTime * fps * timeScale;
+var frameNum = startFrame;
 
 function draw() {
-  frameNum++;
-
   var frameData = frames[frameNum];
 
   background(0);
@@ -149,10 +148,10 @@ function draw() {
     textSize(40);
     textAlign(LEFT, TOP);
     text(frameData.time, 0, 0, 288, 288)
+    frameNum++;
   }
   else {
-    noLoop(); // stop
-    console.log("no more frame data; stopped");
+    frameNum = startFrame;
   }
 }
 
