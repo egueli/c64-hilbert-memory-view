@@ -1,12 +1,12 @@
 var mapScale = 2;
-var timeScale = 100;
+var timeScale = 1;
 var trace;
 var frames = [];
 
 var fps = 60;
-var traceClearAlpha = 1;
+var traceClearAlpha = 20;
 var startAtTime = 0;
-var stopAtTime = 0.25;
+var stopAtTime = 100000;
 
 var microsecsPerFrame = Math.floor(1000000 / fps);
 
