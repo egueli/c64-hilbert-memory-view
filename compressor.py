@@ -10,9 +10,7 @@ class FrameData:
 
 	def output(self):
 		s = []
-		s.append(self.time)
 		for direction in self.addresses:
-			s.append(direction)
 			accesses = list(set(self.addresses[direction]))
 			accesses.sort()
 
@@ -26,13 +24,11 @@ class FrameData:
 					if access == rangeStart + rangeLen:
 						rangeLen = rangeLen + 1
 					else:
-						s.append(rangeStart)
-						s.append(rangeLen)
+						s.append("%s:%d:%d" % (direction, rangeStart, rangeLen))
 						rangeStart = access
 						rangeLen = 1
-			s.append(rangeStart)
-			s.append(rangeLen)
-		print " ".join([str(n) for n in s])
+			s.append("%s:%d:%d" % (direction, rangeStart, rangeLen))
+		print str(self.time) + " " + " ".join(s)
 
 
 	def parse(self, fields):
