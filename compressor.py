@@ -52,8 +52,7 @@ for line in sys.stdin:
 
 		if not startTime:
 			startTime = time
-		else:
-			time = time - startTime
+		time = time - startTime
 
 		sequence = int(time / frameDuration)
 		if sequence != f.sequence:
