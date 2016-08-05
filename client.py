@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import argparse
 import socket
 import re
 
@@ -180,17 +181,27 @@ def processStepLines(lines):
 	raise Exception("unrecognized instruction: " + instruction)
 
 
+parser = argparse.ArgumentParser(description="Traces all memory accesses of the emulated CPU in a VICE instance.")
+parser.add_argument('-r', '--reset',
+                    help='resets the C64 at start',
+                    action='store_true')
+
+args = parser.parse_args()
+print args.reset
+
+
 talker = ViceRemoteMonitorTalker()
 
-# Triggers a soft reset.
-# The "reset" command doesn't work reliably, as it messes with the monitor
-# state. The "g" command to the reset routine makes the monitor leave, that's
-# why it's preceded by a breakpoint on the same location.
-# Note: the first "step" command will run the instruction after the first of
-# the reset routine.
-startAt = "$fce2"
-talker.talk("break " + startAt)
-talker.talk("g " + startAt)
+if args.reset:
+	# Triggers a soft reset.
+	# The "reset" command doesn't work reliably, as it messes with the monitor
+	# state. The "g" command to the reset routine makes the monitor leave, that's
+	# why it's preceded by a breakpoint on the same location.
+	# Note: the first "step" command will run the instruction after the first of
+	# the reset routine.
+	startAt = "$fce2"
+	talker.talk("break " + startAt)
+	talker.talk("g " + startAt)
 
 while True:
 	lines = talker.talk("step")
