@@ -69,5 +69,4 @@ for line in sys.stdin:
 		print "error while processing line " + line
 		raise
 
-output()
-
+f.output()
