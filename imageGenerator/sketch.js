@@ -16,7 +16,7 @@ var mapGraphics;
 var density = window.devicePixelRatio; // happens to be 2 on os x with retina display
 
 function preload() {
-  trace = loadStrings('assets/trace_reset.txt');
+  trace = loadStrings('assets/traces/ctrace_reset.txt');
 }
 
 function setup() {
@@ -34,15 +34,11 @@ function setup() {
 }
 
 function processTrace() {
-  var startTime = undefined;
+  console.log("will read " + trace.length + " lines")
   for (var i=0; i<trace.length; i++) {
     var line = trace[i];
     var tokens = line.split(" ");
-    var absoluteTimestamp = tokens[0];
-    if (startTime === undefined) {
-      startTime = absoluteTimestamp;
-    }
-    var timestamp = absoluteTimestamp - startTime;
+    var timestamp = tokens[0];
 
 
     var frame = Math.floor(timestamp / microsecsPerFrame * timeScale);
@@ -58,13 +54,13 @@ function processTrace() {
       reads = frames[frame].reads;
     }
 
-    var addressHex = tokens[1];
-    var address = parseInt(addressHex, 16);
-    if (reads[address] === undefined) {
-      reads[address] = 1;
-    }
-    else {
-      reads[address]++;
+    for (var t = 1; t < tokens.length; t++) {
+      var accessFields = tokens[t].split(':')
+      var rangeStart = parseInt(accessFields[1])
+      var rangeLen = parseInt(accessFields[2])
+      for (var a = 0; a < rangeLen; a++) {
+        reads[rangeStart + a] = 1
+      }
     }
   }
 
