@@ -85,6 +85,17 @@ def direction(opcode):
 	d = directions[opcode]
 	return d
 
+def readMemory(address):
+	memlines = talker.talk('mem %04x %04x' % (address, address + 1))
+	memline = memlines[0]
+	memMatch = re.match('.........([0-9a-f]{2}) ([0-9a-f]{2})', memline)
+	if not memMatch:
+		raise Exception('unrecognized memory dump output: ' + memline)
+	lowHex = memMatch.group(1)
+	highHex = memMatch.group(2)
+	return int(highHex + lowHex, 16)
+
+
 def processStepLines(lines):
 	if (len(lines) != 1):
 		print len(lines), "lines??"
@@ -117,39 +128,54 @@ def processStepLines(lines):
 	ip = int(ipHex, 16)
 	print time, "%04x" % (ip + 1), "x"
 
-	matchImmediate = re.search('^... #\$\S\S   ', instruction)
+	matchImmediate = re.search('^... #\$[0-9A-F]{2}   ', instruction)
 	if matchImmediate:
 		return
 
-	matchZeroPage = re.search('^(...) \$(\S\S)   ', instruction)
+	matchZeroPage = re.search('^(...) \$([0-9A-F]{2})   ', instruction)
 	if matchZeroPage:
 		addressHex = matchZeroPage.group(2)
 		print time, "00" + addressHex, direction(matchZeroPage.group(1))
 		return
 
-	matchIndirectIndexed = re.search('^(...) \(\$(\S\S)\),Y', instruction)
+	matchZeroPageIndexed = re.search('(...) \$([0-9A-F]{2}),([XY])', instruction)
+	if matchZeroPageIndexed:
+		opcode, addressHex, register = [matchZeroPageIndexed.group(i) for i in range(1, 4)]
+		if register == 'X':
+			address = int(addressHex, 16) + int(xHex, 16)
+		else:
+			address = int(addressHex, 16) + int(yHex, 16)
+
+		print time, "%04x" % address, direction(opcode)
+		return
+
+	matchIndirectIndexed = re.search('^(...) \(\$([0-9A-F]{2})\),Y', instruction)
 	if matchIndirectIndexed:
 		zpAddressHex = matchIndirectIndexed.group(2)
 		zpAddress = int(zpAddressHex, 16)
 		print time, "%04x" % zpAddress, "r"
 		print time, "%04x" % (zpAddress + 1), "r"
-		memlines = talker.talk('mem %04x %04x' % (zpAddress, zpAddress + 1))
-		memline = memlines[0]
-		memMatch = re.match('.........(\S\S) (\S\S)', memline)
-		if not memMatch:
-			raise Exception('unrecognized memory dump output: ' + memline)
-		lowHex = memMatch.group(1)
-		highHex = memMatch.group(2)
-		base = int(highHex + lowHex, 16)
-		effective = base + int(yHex, 16)
+		effective = readMemory(zpAddress) + int(yHex, 16)
 		opcode = matchIndirectIndexed.group(1)
+		print time, "%04x" % effective, direction(opcode)
+		return
+
+	matchIndexedIndirect = re.search('^(...) \(\$([0-9A-F]{2}),X\)', instruction)
+	if matchIndexedIndirect:
+		zpBaseAddressHex = matchIndirectIndexed.group(2)
+		zpBaseAddress = int(zpBaseAddressHex, 16)
+		zpAddress = (zpBaseAddress + int(xHex, 16) % 256)
+		print time, "%04x" % zpAddress, "r"
+		print time, "%04x" % (zpAddress + 1), "r"
+		effective = readMemory(zpAddress)
+		opcode = matchIndexedIndirect.group(1)
 		print time, "%04x" % effective, direction(opcode)
 		return
 
 	# 3-byte instructions
 	print time, "%04x" % (ip + 2), "x"
 
-	matchAbsolute = re.search('^(...) \$(\S\S\S\S)    ', instruction)
+	matchAbsolute = re.search('^(...) \$([0-9A-F]{4})    ', instruction)
 	if matchAbsolute:
 		opcode = matchAbsolute.group(1)
 		direc = direction(matchAbsolute.group(1))
@@ -157,7 +183,7 @@ def processStepLines(lines):
 			print time, matchAbsolute.group(2), direc
 		return
 
-	matchAbsoluteIndexed = re.search('(...) \$(\S\S\S\S),([XY])', instruction)
+	matchAbsoluteIndexed = re.search('(...) \$([0-9A-F]{4}),([XY])', instruction)
 	if matchAbsoluteIndexed:
 		opcode, addressHex, register = [matchAbsoluteIndexed.group(i) for i in range(1, 4)]
 		if register == 'X':
@@ -165,11 +191,10 @@ def processStepLines(lines):
 		else:
 			address = int(addressHex, 16) + int(yHex, 16)
 
-
 		print time, "%04x" % address, direction(opcode)
 		return
 
-	matchIndirectJMP = re.search('JMP \(\$(\S\S\S\S)\)  ', instruction)
+	matchIndirectJMP = re.search('JMP \(\$([0-9A-F]{4})\)  ', instruction)
 	if matchIndirectJMP:
 		addressHex = matchIndirectJMP.group(1)
 		address = int(addressHex, 16)
