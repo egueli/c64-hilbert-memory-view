@@ -211,12 +211,10 @@ parser.add_argument('-r', '--reset',
                     help='resets the C64 at start',
                     action='store_true')
 
-args = parser.parse_args()
-print args.reset
-
 
 talker = ViceRemoteMonitorTalker()
 
+args = parser.parse_args()
 if args.reset:
 	# Triggers a soft reset.
 	# The "reset" command doesn't work reliably, as it messes with the monitor
