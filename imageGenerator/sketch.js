@@ -1,7 +1,7 @@
 var mapScale = 2;
-var timeScale = 1;
-var trace;
+var timeScale = 1000;
 var frames = [];
+var endFrame = 0;
 
 var fps = 60;
 var traceClearAlpha = 20;
@@ -49,16 +49,18 @@ function processTrace() {
         time: timestamp / 1000000,
         reads: reads
       };
+      endFrame = frame;
     }
     else {
       reads = frames[frame].reads;
     }
 
-    for (var t = 1; t < tokens.length; t++) {
+    var nGroups = 0, nAccesses = 0;
+    for (var t = 1; t < tokens.length; t++, nGroups++) {
       var accessFields = tokens[t].split(':')
       var rangeStart = parseInt(accessFields[1])
       var rangeLen = parseInt(accessFields[2])
-      for (var a = 0; a < rangeLen; a++) {
+      for (var a = 0; a < rangeLen; a++, nAccesses++) {
         reads[rangeStart + a] = 1
       }
     }
@@ -130,7 +132,25 @@ var startFrame = startAtTime * fps * timeScale;
 var frameNum = startFrame;
 
 function draw() {
+  if (frameNum > endFrame) {
+    console.log("end of trace, looping");
+    frameNum = startFrame;
+    return;
+  }
+
   var frameData = frames[frameNum];
+  frameNum++;
+
+  if (!frameData) {
+    console.log("empty frame " + frameNum);
+    return;
+  }
+
+  if (frameData.time >= stopAtTime) {
+    console.log("reached stopAtTime, looping");
+    frameNum = startFrame;
+    return;
+  }
 
   background(0);
   image(mapGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
@@ -139,17 +159,11 @@ function draw() {
   image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   blendMode(BLEND);
 
-  if (frameData && frameData.time < stopAtTime) {
-    stroke(255);
-    fill(255);
-    textSize(40);
-    textAlign(LEFT, BOTTOM);
-    text(frameData.time, 0, 0, 512, 512)
-    frameNum++;
-  }
-  else {
-    frameNum = startFrame;
-  }
+  stroke(255);
+  fill(255);
+  textSize(40);
+  textAlign(LEFT, BOTTOM);
+  text(frameData.time, 0, 0, 512, 512)
 }
 
 function updateTraceGraphics(frameData) {
