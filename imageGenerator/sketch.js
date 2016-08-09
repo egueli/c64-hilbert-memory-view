@@ -1,9 +1,10 @@
 var mapScale = 2;
-var timeScale = 1000;
+var timeScale = 1;
 var frames = [];
 var endFrame = 0;
+var firstLoop = true;
 
-var fps = 60;
+var fps = 25;
 var traceClearAlpha = 20;
 var startAtTime = 0;
 var stopAtTime = 100000;
@@ -16,7 +17,7 @@ var mapGraphics;
 var density = window.devicePixelRatio; // happens to be 2 on os x with retina display
 
 function preload() {
-  trace = loadStrings('assets/traces/ctrace_reset.txt');
+  trace = loadStrings('assets/traces/simple_basic.ctrace');
 }
 
 function setup() {
@@ -135,6 +136,7 @@ function draw() {
   if (frameNum > endFrame) {
     console.log("end of trace, looping");
     frameNum = startFrame;
+    firstLoop = false;
     return;
   }
 
@@ -149,6 +151,7 @@ function draw() {
   if (frameData.time >= stopAtTime) {
     console.log("reached stopAtTime, looping");
     frameNum = startFrame;
+    firstLoop = false;
     return;
   }
 
@@ -163,7 +166,11 @@ function draw() {
   fill(255);
   textSize(40);
   textAlign(LEFT, BOTTOM);
-  text(frameData.time, 0, 0, 512, 512)
+  text(frameNum + ": "+ frameData.time, 0, 0, 512, 512)
+
+  if (firstLoop) {
+    saveCanvas("frame" + nf(frameNum - 1, 5, 0), "png");
+  }
 }
 
 function updateTraceGraphics(frameData) {
