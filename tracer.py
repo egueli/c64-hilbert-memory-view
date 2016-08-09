@@ -96,23 +96,8 @@ def readMemory(address):
 	return int(highHex + lowHex, 16)
 
 
-def processStepLines(lines):
-	if (len(lines) != 1):
-		print len(lines), "lines??"
-		for line in lines:
-			print line
-		raise Exception("... line?")
 
-	line = lines[0]
-	#print line
-	m = re.search('...([0-9a-f]+).{14}(.+) - A:(..) X:(..) Y:(..).* ([0-9]+)', line)
-	if not m:
-		raise Exception("no match: \"" + line + "\"")
-
-	groups = [m.group(i) for i in range(1, 7)]
-	ipHex, instruction, aHex, xHex, yHex, time = groups
-	print time, ipHex, "x", instruction
-
+def parseInstruction(instruction, ipHex, aHex, xHex, yHex, time):
 	# 1-byte instructions
 
 	matchImplied = re.search('^...  ', instruction)
@@ -204,6 +189,29 @@ def processStepLines(lines):
 
 	
 	raise Exception("unrecognized instruction: " + instruction)
+
+
+def processStepLines(lines):
+	if (len(lines) != 1):
+		print len(lines), "lines??"
+		for line in lines:
+			print line
+		raise Exception("... line?")
+
+	line = lines[0]
+	#print line
+	m = re.search('...([0-9a-f]+).{14}(.+) - A:(..) X:(..) Y:(..).* ([0-9]+)', line)
+	if not m:
+		raise Exception("no match: \"" + line + "\"")
+
+	groups = [m.group(i) for i in range(1, 7)]
+	ipHex, instruction, aHex, xHex, yHex, time = groups
+	print time, ipHex, "x", instruction
+
+	parseInstruction(instruction, ipHex, aHex, xHex, yHex, time)
+
+	return time
+
 
 
 parser = argparse.ArgumentParser(description="Traces all memory accesses of the emulated CPU in a VICE instance.")
