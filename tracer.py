@@ -210,7 +210,7 @@ def processStepLines(lines):
 
 	parseInstruction(instruction, ipHex, aHex, xHex, yHex, time)
 
-	return time
+	return int(time)
 
 
 
@@ -218,7 +218,7 @@ parser = argparse.ArgumentParser(description="Traces all memory accesses of the 
 parser.add_argument('-r', '--reset',
                     help='resets the C64 at start',
                     action='store_true')
-
+parser.add_argument('-f', '--save-frames-fps')
 
 talker = ViceRemoteMonitorTalker()
 
@@ -234,9 +234,24 @@ if args.reset:
 	talker.talk("break " + startAt)
 	talker.talk("g " + startAt)
 
+
+
+if args.save_frames_fps:
+	fps = int(args.save_frames_fps)
+else:
+	fps = None
+
+lastSavedFrame = None
+
 while True:
 	lines = talker.talk("step")
-	processStepLines(lines);	
+	time = processStepLines(lines)
+	if fps:
+		frameNumber = time / fps
+		if frameNumber != lastSavedFrame:
+			talker.talk("screenshot \"/tmp/frame" + str(frameNumber) + "\" 2")
+			frameNumber = lastSavedFrame
+
 
 
 sock.close()
