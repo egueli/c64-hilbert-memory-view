@@ -3,6 +3,7 @@
 import argparse
 import socket
 import re
+from math import floor
 
 class ViceRemoteMonitorTalker:
 	def __init__(self):
@@ -47,6 +48,9 @@ class ViceRemoteMonitorTalker:
 				return lines[:-1]
 			# else:
 			# 	print "rr", "prompt is not here"
+
+	def close(self):
+		self.sock.close()
 
 directions = {
 	'STA': 'w',
@@ -219,6 +223,7 @@ parser.add_argument('-r', '--reset',
                     help='resets the C64 at start',
                     action='store_true')
 parser.add_argument('-f', '--save-frames-fps')
+parser.add_argument('-e', '--end-at')
 
 talker = ViceRemoteMonitorTalker()
 
@@ -241,17 +246,28 @@ if args.save_frames_fps:
 else:
 	fps = None
 
-lastSavedFrame = None
+if args.end_at:
+	endAt = floor(float(args.end_at) * 1000000)
+else:
+	endAt = float("inf")
 
+lastSavedFrame = None
+firstInstructionAt = None
 while True:
 	lines = talker.talk("step")
 	time = processStepLines(lines)
+	if not firstInstructionAt:
+		firstInstructionAt = time
+	if (time - firstInstructionAt) > endAt:
+		break
+
 	if fps:
-		frameNumber = time / fps
+		frameNumber = floor(time / (1000000 / fps))
 		if frameNumber != lastSavedFrame:
-			talker.talk("screenshot \"/tmp/frame" + str(frameNumber) + "\" 2")
-			frameNumber = lastSavedFrame
+			command = "screenshot \"/tmp/frame" + str(time) + "\" 2"
+			talker.talk(command)
+			lastSavedFrame = frameNumber
 
 
 
-sock.close()
+talker.close()
