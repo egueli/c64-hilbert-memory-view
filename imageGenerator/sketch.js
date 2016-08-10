@@ -1,6 +1,7 @@
 var mapScale = 2;
 var timeScale = 1;
 var frames = [];
+var firstFrameNum;
 var endFrameNum = 0;
 var firstLoop = true;
 
@@ -51,6 +52,8 @@ function processTrace() {
         reads: reads
       };
       endFrameNum = frameNum;
+      if (firstFrameNum === undefined)
+        firstFrameNum = frameNum
     }
     else {
       reads = frames[frameNum].reads;
@@ -133,14 +136,14 @@ var startFrameNum = startAtTime * fps * timeScale;
 var frameNum = startFrameNum;
 
 function draw() {
-  if (frameNum > endFrameNum) {
+  if (frameNum > endFrameNum - firstFrameNum) {
     console.log("end of trace, looping");
     frameNum = startFrameNum;
     firstLoop = false;
     return;
   }
 
-  var frameData = frames[frameNum];
+  var frameData = frames[firstFrameNum + frameNum];
   frameNum++;
 
   if (!frameData) {
@@ -168,9 +171,9 @@ function draw() {
   textAlign(LEFT, BOTTOM);
   text(frameNum + ": "+ frameData.time, 0, 0, 512, 512)
 
-  if (firstLoop) {
-    saveCanvas("frame" + nf(frameNum - 1, 5, 0), "png");
-  }
+  // if (firstLoop) {
+  //   saveCanvas("frame" + nf(frameNum - 1, 5, 0), "png");
+  // }
 }
 
 function updateTraceGraphics(frameData) {
