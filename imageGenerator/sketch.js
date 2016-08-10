@@ -1,7 +1,7 @@
 var mapScale = 2;
 var timeScale = 1;
 var frames = [];
-var endFrame = 0;
+var endFrameNum = 0;
 var firstLoop = true;
 
 var fps = 25;
@@ -42,18 +42,18 @@ function processTrace() {
     var timestamp = tokens[0];
 
 
-    var frame = Math.floor(timestamp / microsecsPerFrame * timeScale);
+    var frameNum = Math.floor(timestamp / microsecsPerFrame * timeScale);
     var reads;
-    if (!frames[frame]) {
+    if (!frames[frameNum]) {
       reads = [];
-      frames[frame] = {
+      frames[frameNum] = {
         time: timestamp / 1000000,
         reads: reads
       };
-      endFrame = frame;
+      endFrameNum = frameNum;
     }
     else {
-      reads = frames[frame].reads;
+      reads = frames[frameNum].reads;
     }
 
     var nGroups = 0, nAccesses = 0;
@@ -129,13 +129,13 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 }
 
 
-var startFrame = startAtTime * fps * timeScale;
-var frameNum = startFrame;
+var startFrameNum = startAtTime * fps * timeScale;
+var frameNum = startFrameNum;
 
 function draw() {
-  if (frameNum > endFrame) {
+  if (frameNum > endFrameNum) {
     console.log("end of trace, looping");
-    frameNum = startFrame;
+    frameNum = startFrameNum;
     firstLoop = false;
     return;
   }
@@ -150,7 +150,7 @@ function draw() {
 
   if (frameData.time >= stopAtTime) {
     console.log("reached stopAtTime, looping");
-    frameNum = startFrame;
+    frameNum = startFrameNum;
     firstLoop = false;
     return;
   }
