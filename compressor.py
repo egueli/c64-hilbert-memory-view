@@ -39,25 +39,20 @@ class FrameData:
 
 		self.addresses[direction].append(address)
 
-
-f = FrameData(0, 0)
-
+f = None
 frameDuration = 10
-currentFrame = 0
-startTime = None
 for line in sys.stdin:
 	try:
 		fields = line.split()
 		time = int(fields[0])
 
-		if not startTime:
-			startTime = time
-		time = time - startTime
-
 		sequence = int(time / frameDuration)
-		if sequence != f.sequence:
-			f.output()
+		if not f:
 			f = FrameData(sequence, time)
+		else:
+			if f.sequence != sequence:
+				f.output()
+				f = FrameData(sequence, time)
 
 		f.parse(fields)
 	except:
