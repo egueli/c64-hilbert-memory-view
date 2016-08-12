@@ -1,14 +1,19 @@
+// configuration
 var mapScale = 2;
 var timeScale = 1;
-var frames = [];
-var firstFrameNum;
-var endFrameNum = 0;
-var firstLoop = true;
-
-var fps = 25;
-var traceClearAlpha = 20;
 var startAtTime = 0;
 var stopAtTime = 100000;
+var saveAllFrames = false;
+var showText = true;
+var fps = 60;
+var traceClearAlpha = 20;
+
+
+// global variables
+var endFrameNum = 0;
+var firstLoop = true;
+var frames = [];
+var firstFrameNum;
 
 var microsecsPerFrame = Math.floor(1000000 / fps);
 
@@ -48,6 +53,7 @@ function processTrace() {
     if (!frames[frameNum]) {
       reads = [];
       frames[frameNum] = {
+        timestamp: timestamp,
         time: timestamp / 1000000,
         reads: reads
       };
@@ -165,15 +171,17 @@ function draw() {
   image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   blendMode(BLEND);
 
-  stroke(255);
-  fill(255);
-  textSize(40);
-  textAlign(LEFT, BOTTOM);
-  text(frameNum + ": "+ frameData.time, 0, 0, 512, 512)
+  if (showText) {
+    stroke(255);
+    fill(255);
+    textSize(40);
+    textAlign(LEFT, BOTTOM);
+    text(frameNum + ": "+ frameData.timestamp, 0, 0, 512, 512)
+  }
 
-  // if (firstLoop) {
-  //   saveCanvas("frame" + nf(frameNum - 1, 5, 0), "png");
-  // }
+  if (saveAllFrames && firstLoop) {
+    saveCanvas("frame" + frameData.timestamp, "png");
+  }
 }
 
 function updateTraceGraphics(frameData) {
