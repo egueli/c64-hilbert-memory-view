@@ -1,4 +1,5 @@
 // configuration
+var traceFileName = 'simple_basic.ctrace';
 var mapScale = 2;
 var timeScale = 1;
 var startAtTime = 0;
@@ -23,7 +24,7 @@ var mapGraphics;
 var density = window.devicePixelRatio; // happens to be 2 on os x with retina display
 
 function preload() {
-  trace = loadStrings('assets/traces/simple_basic.ctrace');
+  trace = loadStrings('assets/traces/' + traceFileName);
 }
 
 function setup() {
