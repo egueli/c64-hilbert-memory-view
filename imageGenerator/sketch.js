@@ -1,12 +1,20 @@
+// configuration
+var traceFileName = 'simple_basic.ctrace';
 var mapScale = 2;
-var timeScale = 1000;
-var frames = [];
-var endFrame = 0;
-
-var fps = 60;
-var traceClearAlpha = 20;
+var timeScale = 1;
 var startAtTime = 0;
 var stopAtTime = 100000;
+var saveAllFrames = false;
+var showText = true;
+var fps = 60;
+var traceClearAlpha = 20;
+
+
+// global variables
+var endFrameNum = 0;
+var firstLoop = true;
+var frames = [];
+var firstFrameNum;
 
 var microsecsPerFrame = Math.floor(1000000 / fps);
 
@@ -16,7 +24,7 @@ var mapGraphics;
 var density = window.devicePixelRatio; // happens to be 2 on os x with retina display
 
 function preload() {
-  trace = loadStrings('assets/traces/ctrace_reset.txt');
+  trace = loadStrings('assets/traces/' + traceFileName);
 }
 
 function setup() {
@@ -41,18 +49,21 @@ function processTrace() {
     var timestamp = tokens[0];
 
 
-    var frame = Math.floor(timestamp / microsecsPerFrame * timeScale);
+    var frameNum = Math.floor(timestamp / microsecsPerFrame * timeScale);
     var reads;
-    if (!frames[frame]) {
+    if (!frames[frameNum]) {
       reads = [];
-      frames[frame] = {
+      frames[frameNum] = {
+        timestamp: timestamp,
         time: timestamp / 1000000,
         reads: reads
       };
-      endFrame = frame;
+      endFrameNum = frameNum;
+      if (firstFrameNum === undefined)
+        firstFrameNum = frameNum
     }
     else {
-      reads = frames[frame].reads;
+      reads = frames[frameNum].reads;
     }
 
     var nGroups = 0, nAccesses = 0;
@@ -128,17 +139,18 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 }
 
 
-var startFrame = startAtTime * fps * timeScale;
-var frameNum = startFrame;
+var startFrameNum = startAtTime * fps * timeScale;
+var frameNum = startFrameNum;
 
 function draw() {
-  if (frameNum > endFrame) {
+  if (frameNum > endFrameNum - firstFrameNum) {
     console.log("end of trace, looping");
-    frameNum = startFrame;
+    frameNum = startFrameNum;
+    firstLoop = false;
     return;
   }
 
-  var frameData = frames[frameNum];
+  var frameData = frames[firstFrameNum + frameNum];
   frameNum++;
 
   if (!frameData) {
@@ -148,7 +160,8 @@ function draw() {
 
   if (frameData.time >= stopAtTime) {
     console.log("reached stopAtTime, looping");
-    frameNum = startFrame;
+    frameNum = startFrameNum;
+    firstLoop = false;
     return;
   }
 
@@ -159,11 +172,17 @@ function draw() {
   image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   blendMode(BLEND);
 
-  stroke(255);
-  fill(255);
-  textSize(40);
-  textAlign(LEFT, BOTTOM);
-  text(frameData.time, 0, 0, 512, 512)
+  if (showText) {
+    stroke(255);
+    fill(255);
+    textSize(40);
+    textAlign(LEFT, BOTTOM);
+    text(frameNum + ": "+ frameData.timestamp, 0, 0, 512, 512)
+  }
+
+  if (saveAllFrames && firstLoop) {
+    saveCanvas("frame" + frameData.timestamp, "png");
+  }
 }
 
 function updateTraceGraphics(frameData) {

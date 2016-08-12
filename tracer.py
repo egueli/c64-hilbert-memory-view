@@ -3,6 +3,7 @@
 import argparse
 import socket
 import re
+from math import floor
 
 class ViceRemoteMonitorTalker:
 	def __init__(self):
@@ -47,6 +48,9 @@ class ViceRemoteMonitorTalker:
 				return lines[:-1]
 			# else:
 			# 	print "rr", "prompt is not here"
+
+	def close(self):
+		self.sock.close()
 
 directions = {
 	'STA': 'w',
@@ -96,23 +100,8 @@ def readMemory(address):
 	return int(highHex + lowHex, 16)
 
 
-def processStepLines(lines):
-	if (len(lines) != 1):
-		print len(lines), "lines??"
-		for line in lines:
-			print line
-		raise Exception("... line?")
 
-	line = lines[0]
-	#print line
-	m = re.search('...([0-9a-f]+).{14}(.+) - A:(..) X:(..) Y:(..).* ([0-9]+)', line)
-	if not m:
-		raise Exception("no match: \"" + line + "\"")
-
-	groups = [m.group(i) for i in range(1, 7)]
-	ipHex, instruction, aHex, xHex, yHex, time = groups
-	print time, ipHex, "x", instruction
-
+def parseInstruction(instruction, ipHex, aHex, xHex, yHex, time):
 	# 1-byte instructions
 
 	matchImplied = re.search('^...  ', instruction)
@@ -206,11 +195,35 @@ def processStepLines(lines):
 	raise Exception("unrecognized instruction: " + instruction)
 
 
+def processStepLines(lines):
+	if (len(lines) != 1):
+		print len(lines), "lines??"
+		for line in lines:
+			print line
+		raise Exception("... line?")
+
+	line = lines[0]
+	#print line
+	m = re.search('...([0-9a-f]+).{14}(.+) - A:(..) X:(..) Y:(..).* ([0-9]+)', line)
+	if not m:
+		raise Exception("no match: \"" + line + "\"")
+
+	groups = [m.group(i) for i in range(1, 7)]
+	ipHex, instruction, aHex, xHex, yHex, time = groups
+	print time, ipHex, "x", instruction
+
+	parseInstruction(instruction, ipHex, aHex, xHex, yHex, time)
+
+	return int(time)
+
+
+
 parser = argparse.ArgumentParser(description="Traces all memory accesses of the emulated CPU in a VICE instance.")
 parser.add_argument('-r', '--reset',
                     help='resets the C64 at start',
                     action='store_true')
-
+parser.add_argument('-f', '--save-frames-fps')
+parser.add_argument('-e', '--end-at')
 
 talker = ViceRemoteMonitorTalker()
 
@@ -226,9 +239,35 @@ if args.reset:
 	talker.talk("break " + startAt)
 	talker.talk("g " + startAt)
 
+
+
+if args.save_frames_fps:
+	fps = int(args.save_frames_fps)
+else:
+	fps = None
+
+if args.end_at:
+	endAt = floor(float(args.end_at) * 1000000)
+else:
+	endAt = float("inf")
+
+lastSavedFrame = None
+firstInstructionAt = None
 while True:
 	lines = talker.talk("step")
-	processStepLines(lines);	
+	time = processStepLines(lines)
+	if not firstInstructionAt:
+		firstInstructionAt = time
+	if (time - firstInstructionAt) > endAt:
+		break
+
+	if fps:
+		frameNumber = floor(time / (1000000 / fps))
+		if frameNumber != lastSavedFrame:
+			command = "screenshot \"/tmp/frame" + str(time) + "\" 2"
+			talker.talk(command)
+			lastSavedFrame = frameNumber
 
 
-sock.close()
+
+talker.close()
