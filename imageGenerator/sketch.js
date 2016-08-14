@@ -148,6 +148,7 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 
 var startFrameNum = startAtTime * fps * timeScale;
 var frameNum = startFrameNum;
+var currentScreenshotImage;
 
 function draw() {
   if (frameNum > endFrameNum - firstFrameNum) {
@@ -173,6 +174,18 @@ function draw() {
   }
 
   console.log("screenshot file:", frameData.screenshot);
+  if (frameData.screenshot) {
+    if (currentScreenshotImage) {
+      currentScreenshotImage.remove();
+    }
+    noLoop(); // will do the next loop only when the image is loaded
+    currentScreenshotImage = createImg("assets/traces/" + frameData.screenshot, "screenshot", function() {
+      draw();
+    });
+  }
+  else {
+    loop();
+  }
 
   background(0);
   image(mapGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
