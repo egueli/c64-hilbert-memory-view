@@ -50,14 +50,16 @@ function processTrace() {
 
 
     var frameNum = Math.floor(timestamp / microsecsPerFrame * timeScale);
+    var frame;
     var reads;
     if (!frames[frameNum]) {
       reads = [];
-      frames[frameNum] = {
+      frame = {
         timestamp: timestamp,
         time: timestamp / 1000000,
-        reads: reads
+        reads: reads,
       };
+      frames[frameNum] = frame;
       endFrameNum = frameNum;
       if (firstFrameNum === undefined)
         firstFrameNum = frameNum
@@ -66,13 +68,18 @@ function processTrace() {
       reads = frames[frameNum].reads;
     }
 
-    var nGroups = 0, nAccesses = 0;
-    for (var t = 1; t < tokens.length; t++, nGroups++) {
-      var accessFields = tokens[t].split(':')
-      var rangeStart = parseInt(accessFields[1])
-      var rangeLen = parseInt(accessFields[2])
-      for (var a = 0; a < rangeLen; a++, nAccesses++) {
-        reads[rangeStart + a] = 1
+    if (tokens[1] == 'screenshot') {
+      frame.screenshot = tokens[2];
+    }
+    else {
+      var nGroups = 0, nAccesses = 0;
+      for (var t = 1; t < tokens.length; t++, nGroups++) {
+        var accessFields = tokens[t].split(':')
+        var rangeStart = parseInt(accessFields[1])
+        var rangeLen = parseInt(accessFields[2])
+        for (var a = 0; a < rangeLen; a++, nAccesses++) {
+          reads[rangeStart + a] = 1
+        }
       }
     }
   }
@@ -164,6 +171,8 @@ function draw() {
     firstLoop = false;
     return;
   }
+
+  console.log("screenshot file:", frameData.screenshot);
 
   background(0);
   image(mapGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
