@@ -23,12 +23,15 @@ var mapGraphics;
 
 var density = window.devicePixelRatio; // happens to be 2 on os x with retina display
 
+var screenshotWidth = 384;
+var screenshotHeight = 272;
+
 function preload() {
   trace = loadStrings('assets/traces/' + traceFileName);
 }
 
 function setup() {
-  createCanvas(512, 512);
+  createCanvas(512 + screenshotWidth, 512);
   traceGraphics = createGraphics(512 * density, 512 * density);
   mapGraphics = createGraphics(512 * density, 512 * density);
   setFrameRate(fps);
@@ -50,14 +53,16 @@ function processTrace() {
 
 
     var frameNum = Math.floor(timestamp / microsecsPerFrame * timeScale);
+    var frame;
     var reads;
     if (!frames[frameNum]) {
       reads = [];
-      frames[frameNum] = {
+      frame = {
         timestamp: timestamp,
         time: timestamp / 1000000,
-        reads: reads
+        reads: reads,
       };
+      frames[frameNum] = frame;
       endFrameNum = frameNum;
       if (firstFrameNum === undefined)
         firstFrameNum = frameNum
@@ -66,13 +71,18 @@ function processTrace() {
       reads = frames[frameNum].reads;
     }
 
-    var nGroups = 0, nAccesses = 0;
-    for (var t = 1; t < tokens.length; t++, nGroups++) {
-      var accessFields = tokens[t].split(':')
-      var rangeStart = parseInt(accessFields[1])
-      var rangeLen = parseInt(accessFields[2])
-      for (var a = 0; a < rangeLen; a++, nAccesses++) {
-        reads[rangeStart + a] = 1
+    if (tokens[1] == 'screenshot') {
+      frame.screenshot = tokens[2];
+    }
+    else {
+      var nGroups = 0, nAccesses = 0;
+      for (var t = 1; t < tokens.length; t++, nGroups++) {
+        var accessFields = tokens[t].split(':')
+        var rangeStart = parseInt(accessFields[1])
+        var rangeLen = parseInt(accessFields[2])
+        for (var a = 0; a < rangeLen; a++, nAccesses++) {
+          reads[rangeStart + a] = 1
+        }
       }
     }
   }
@@ -141,6 +151,8 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 
 var startFrameNum = startAtTime * fps * timeScale;
 var frameNum = startFrameNum;
+var currentScreenshotImage;
+var loadingScreenshot;
 
 function draw() {
   if (frameNum > endFrameNum - firstFrameNum) {
@@ -151,7 +163,6 @@ function draw() {
   }
 
   var frameData = frames[firstFrameNum + frameNum];
-  frameNum++;
 
   if (!frameData) {
     console.log("empty frame " + frameNum);
@@ -165,6 +176,23 @@ function draw() {
     return;
   }
 
+  if (frameData.screenshot) {
+    if (loadingScreenshot) {
+      if (currentScreenshotImage.width == 1) {
+        console.log("screenshot loading in progress, waiting");
+        return;
+      }
+      else {
+        loadingScreenshot = false;
+      }
+    }
+    else {
+      currentScreenshotImage = loadImage("assets/traces/" + frameData.screenshot);
+      loadingScreenshot = true;
+      return;
+    }
+  }
+
   background(0);
   image(mapGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   updateTraceGraphics(frameData);
@@ -172,17 +200,22 @@ function draw() {
   image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   blendMode(BLEND);
 
+  image(currentScreenshotImage, 512, 0);
+
   if (showText) {
     stroke(255);
     fill(255);
     textSize(40);
-    textAlign(LEFT, BOTTOM);
-    text(frameNum + ": "+ frameData.timestamp, 0, 0, 512, 512)
+    textAlign(RIGHT, BOTTOM);
+    text(frameNum, width, height - 40);
+    text(frameData.timestamp, 0, 0, width, height);
   }
 
   if (saveAllFrames && firstLoop) {
     saveCanvas("frame" + frameData.timestamp, "png");
   }
+
+  frameNum++;
 }
 
 function updateTraceGraphics(frameData) {
