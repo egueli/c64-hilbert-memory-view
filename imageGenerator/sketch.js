@@ -149,6 +149,7 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 var startFrameNum = startAtTime * fps * timeScale;
 var frameNum = startFrameNum;
 var currentScreenshotImage;
+var loadingScreenshot;
 
 function draw() {
   if (frameNum > endFrameNum - firstFrameNum) {
@@ -159,7 +160,6 @@ function draw() {
   }
 
   var frameData = frames[firstFrameNum + frameNum];
-  frameNum++;
 
   if (!frameData) {
     console.log("empty frame " + frameNum);
@@ -173,18 +173,21 @@ function draw() {
     return;
   }
 
-  console.log("screenshot file:", frameData.screenshot);
   if (frameData.screenshot) {
-    if (currentScreenshotImage) {
-      currentScreenshotImage.remove();
+    if (loadingScreenshot) {
+      if (currentScreenshotImage.width == 1) {
+        console.log("screenshot loading in progress, waiting");
+        return;
+      }
+      else {
+        loadingScreenshot = false;
+      }
     }
-    noLoop(); // will do the next loop only when the image is loaded
-    currentScreenshotImage = createImg("assets/traces/" + frameData.screenshot, "screenshot", function() {
-      draw();
-    });
-  }
-  else {
-    loop();
+    else {
+      currentScreenshotImage = loadImage("assets/traces/" + frameData.screenshot);
+      loadingScreenshot = true;
+      return;
+    }
   }
 
   background(0);
@@ -193,6 +196,8 @@ function draw() {
   blendMode(ADD);
   image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   blendMode(BLEND);
+
+  image(currentScreenshotImage, 0, 0);
 
   if (showText) {
     stroke(255);
@@ -205,6 +210,8 @@ function draw() {
   if (saveAllFrames && firstLoop) {
     saveCanvas("frame" + frameData.timestamp, "png");
   }
+
+  frameNum++;
 }
 
 function updateTraceGraphics(frameData) {
