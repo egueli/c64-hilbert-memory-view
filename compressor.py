@@ -46,15 +46,18 @@ for line in sys.stdin:
 		fields = line.split()
 		time = int(fields[0])
 
-		sequence = int(time / frameDuration)
-		if not f:
-			f = FrameData(sequence, time)
+		if (fields[1] == 'screenshot'):
+			print time, "screenshot", fields[2]
 		else:
-			if f.sequence != sequence:
-				f.output()
+			sequence = int(time / frameDuration)
+			if not f:
 				f = FrameData(sequence, time)
+			else:
+				if f.sequence != sequence:
+					f.output()
+					f = FrameData(sequence, time)
 
-		f.parse(fields)
+			f.parse(fields)
 	except:
 		print "error while processing line " + line
 		raise
