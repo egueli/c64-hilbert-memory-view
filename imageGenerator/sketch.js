@@ -23,12 +23,15 @@ var mapGraphics;
 
 var density = window.devicePixelRatio; // happens to be 2 on os x with retina display
 
+var screenshotWidth = 384;
+var screenshotHeight = 272;
+
 function preload() {
   trace = loadStrings('assets/traces/' + traceFileName);
 }
 
 function setup() {
-  createCanvas(512, 512);
+  createCanvas(512 + screenshotWidth, 512);
   traceGraphics = createGraphics(512 * density, 512 * density);
   mapGraphics = createGraphics(512 * density, 512 * density);
   setFrameRate(fps);
@@ -197,7 +200,7 @@ function draw() {
   image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   blendMode(BLEND);
 
-  image(currentScreenshotImage, 0, 0);
+  image(currentScreenshotImage, 512, 0);
 
   if (showText) {
     stroke(255);
