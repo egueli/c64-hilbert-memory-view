@@ -206,8 +206,9 @@ function draw() {
     stroke(255);
     fill(255);
     textSize(40);
-    textAlign(LEFT, BOTTOM);
-    text(frameNum + ": "+ frameData.timestamp, 0, 0, 512, 512)
+    textAlign(RIGHT, BOTTOM);
+    text(frameNum, width, height - 40);
+    text(frameData.timestamp, 0, 0, width, height);
   }
 
   if (saveAllFrames && firstLoop) {
