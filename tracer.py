@@ -4,6 +4,7 @@ import argparse
 import socket
 import re
 from math import floor
+import os
 
 class ViceRemoteMonitorTalker:
 	def __init__(self):
@@ -264,9 +265,12 @@ while True:
 	if fps:
 		frameNumber = floor(time / (1000000 / fps))
 		if frameNumber != lastSavedFrame:
-			command = "screenshot \"/tmp/frame" + str(time) + "\" 2"
+			fileName = "screenshot_" + str(time)
+			filePath = os.getcwd() + "/" + fileName
+			command = "screenshot \"" + filePath + "\" 2" # PNG format=2
 			talker.talk(command)
 			lastSavedFrame = frameNumber
+			print time, "screenshot", fileName + ".png"
 
 
 
