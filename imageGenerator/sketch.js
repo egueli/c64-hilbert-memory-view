@@ -153,6 +153,7 @@ var startFrameNum = startAtTime * fps * timeScale;
 var frameNum = startFrameNum;
 var currentScreenshotImage;
 var loadingScreenshot;
+var saveFrameSeq = 0;
 
 function draw() {
   if (frameNum > endFrameNum - firstFrameNum) {
@@ -212,7 +213,8 @@ function draw() {
   }
 
   if (saveAllFrames && firstLoop) {
-    saveCanvas("frame" + frameData.timestamp, "png");
+    saveCanvas("frame" + saveFrameSeq, "png");
+    saveFrameSeq++;
   }
 
   frameNum++;
