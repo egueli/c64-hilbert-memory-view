@@ -111,6 +111,8 @@ def parseInstruction(instruction, ipHex, aHex, xHex, yHex, time):
 	accesses = out["accesses"]
 
 	# 1-byte instructions
+	ip = int(ipHex, 16)
+	accesses.append(Access(ip, 'x'))
 
 	matchImplied = re.search('^...  ', instruction)
 	if matchImplied:
@@ -122,7 +124,6 @@ def parseInstruction(instruction, ipHex, aHex, xHex, yHex, time):
 
 	# 2-byte instructions
 
-	ip = int(ipHex, 16)
 	accesses.append(Access(ip + 1, 'x'))
 
 	matchImmediate = re.search('^... #\$[0-9A-F]{2}   ', instruction)
@@ -224,7 +225,6 @@ def processStepLines(lines):
 
 	groups = [m.group(i) for i in range(1, 7)]
 	ipHex, instruction, aHex, xHex, yHex, time = groups
-	print time, ipHex, "x", instruction
 
 	parsed = parseInstruction(instruction, ipHex, aHex, xHex, yHex, time)
 	printInstructionAccesses(time, parsed)
