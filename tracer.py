@@ -100,101 +100,114 @@ def readMemory(address):
 	highHex = memMatch.group(2)
 	return int(highHex + lowHex, 16)
 
+class Access:
+	def __init__(self, address, direction):
+		self.address = address;
+		self.direction = direction;
 
 
 def parseInstruction(instruction, ipHex, aHex, xHex, yHex, time):
+	out = {"accesses": []}
+	accesses = out["accesses"]
+
 	# 1-byte instructions
 
 	matchImplied = re.search('^...  ', instruction)
 	if matchImplied:
-		return
+		return out
 
 	matchAccumulator = re.search('^... A  ', instruction)
 	if matchAccumulator:
-		return
+		return out
 
 	# 2-byte instructions
 
 	ip = int(ipHex, 16)
-	print time, "%04x" % (ip + 1), "x"
+	accesses.append(Access(ip + 1, 'x'))
 
 	matchImmediate = re.search('^... #\$[0-9A-F]{2}   ', instruction)
 	if matchImmediate:
-		return
+		return out
 
 	matchZeroPage = re.search('^(...) \$([0-9A-F]{2})   ', instruction)
 	if matchZeroPage:
 		addressHex = matchZeroPage.group(2)
-		print time, "00" + addressHex, direction(matchZeroPage.group(1))
-		return
+		direc = direction(matchZeroPage.group(1))
+		accesses.append(Access(int(addressHex, 16), direc))
+		return out
 
 	matchZeroPageIndexed = re.search('(...) \$([0-9A-F]{2}),([XY])', instruction)
 	if matchZeroPageIndexed:
 		opcode, addressHex, register = [matchZeroPageIndexed.group(i) for i in range(1, 4)]
+		address = int(addressHex, 16)
 		if register == 'X':
-			address = int(addressHex, 16) + int(xHex, 16)
+			address = address + int(xHex, 16)
 		else:
-			address = int(addressHex, 16) + int(yHex, 16)
+			address = address + int(yHex, 16)
 
-		print time, "%04x" % address, direction(opcode)
-		return
+		accesses.append(Access(address, direction(opcode)))
+		return out
 
 	matchIndirectIndexed = re.search('^(...) \(\$([0-9A-F]{2})\),Y', instruction)
 	if matchIndirectIndexed:
 		zpAddressHex = matchIndirectIndexed.group(2)
 		zpAddress = int(zpAddressHex, 16)
-		print time, "%04x" % zpAddress, "r"
-		print time, "%04x" % (zpAddress + 1), "r"
+		accesses.append(Access(zpAddress, 'r'))
+		accesses.append(Access(zpAddress + 1, 'r'))
 		effective = readMemory(zpAddress) + int(yHex, 16)
 		opcode = matchIndirectIndexed.group(1)
-		print time, "%04x" % effective, direction(opcode)
-		return
+		accesses.append(Access(effective, direction(opcode)))
+		return out
 
 	matchIndexedIndirect = re.search('^(...) \(\$([0-9A-F]{2}),X\)', instruction)
 	if matchIndexedIndirect:
 		zpBaseAddressHex = matchIndirectIndexed.group(2)
 		zpBaseAddress = int(zpBaseAddressHex, 16)
 		zpAddress = (zpBaseAddress + int(xHex, 16) % 256)
-		print time, "%04x" % zpAddress, "r"
-		print time, "%04x" % (zpAddress + 1), "r"
+		accesses.append(Access(zpAddress, 'r'))
+		accesses.append(Access(zpAddress + 1, 'r'))
 		effective = readMemory(zpAddress)
 		opcode = matchIndexedIndirect.group(1)
-		print time, "%04x" % effective, direction(opcode)
-		return
+		accesses.append(Access(effective, direction(opcode)))
+		return out
 
 	# 3-byte instructions
-	print time, "%04x" % (ip + 2), "x"
+	accesses.append(Access(ip + 2, 'x'))
 
 	matchAbsolute = re.search('^(...) \$([0-9A-F]{4})    ', instruction)
 	if matchAbsolute:
 		opcode = matchAbsolute.group(1)
-		direc = direction(matchAbsolute.group(1))
+		direc = direction(opcode)
 		if direc:
-			print time, matchAbsolute.group(2), direc
-		return
+			address = int(matchAbsolute.group(2), 16)
+			accesses.append(Access(address, direc))
+		return out
 
 	matchAbsoluteIndexed = re.search('(...) \$([0-9A-F]{4}),([XY])', instruction)
 	if matchAbsoluteIndexed:
 		opcode, addressHex, register = [matchAbsoluteIndexed.group(i) for i in range(1, 4)]
+		address = int(matchAbsoluteIndexed.group(2), 16)
 		if register == 'X':
-			address = int(addressHex, 16) + int(xHex, 16)
+			address = address + int(xHex, 16)
 		else:
-			address = int(addressHex, 16) + int(yHex, 16)
+			address = address + int(yHex, 16)
 
-		print time, "%04x" % address, direction(opcode)
-		return
+		accesses.append(Access(address, direction(opcode)))
+		return out
 
 	matchIndirectJMP = re.search('JMP \(\$([0-9A-F]{4})\)  ', instruction)
 	if matchIndirectJMP:
 		addressHex = matchIndirectJMP.group(1)
 		address = int(addressHex, 16)
-		print time, "%04x" % address, 'r'
-		print time, "%04x" % (address + 1), 'r'
-		return
+		accesses.append(Access(address, 'r'))
+		return out
 
 	
 	raise Exception("unrecognized instruction: " + instruction)
 
+def printInstructionAccesses(time, instruction):
+	for access in instruction["accesses"]:
+		print time, "%04x" % access.address, access.direction
 
 def processStepLines(lines):
 	if (len(lines) != 1):
@@ -213,7 +226,8 @@ def processStepLines(lines):
 	ipHex, instruction, aHex, xHex, yHex, time = groups
 	print time, ipHex, "x", instruction
 
-	parseInstruction(instruction, ipHex, aHex, xHex, yHex, time)
+	parsed = parseInstruction(instruction, ipHex, aHex, xHex, yHex, time)
+	printInstructionAccesses(time, parsed)
 
 	return int(time)
 
