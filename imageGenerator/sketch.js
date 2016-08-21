@@ -25,6 +25,9 @@ var density = window.devicePixelRatio; // happens to be 2 on os x with retina di
 
 var screenshotWidth = 384;
 var screenshotHeight = 272;
+var executeColor = '#ffffff';
+var readColor = '#00ff00';
+var writeColor = '#ff0000';
 
 function preload() {
   trace = loadStrings('assets/traces/' + traceFileName);
@@ -54,13 +57,13 @@ function processTrace() {
 
     var frameNum = Math.floor(timestamp / microsecsPerFrame * timeScale);
     var frame;
-    var reads;
     if (!frames[frameNum]) {
-      reads = [];
       frame = {
         timestamp: timestamp,
         time: timestamp / 1000000,
-        reads: reads,
+        reads: [],
+        writes: [],
+        executes: []
       };
       frames[frameNum] = frame;
       endFrameNum = frameNum;
@@ -68,7 +71,7 @@ function processTrace() {
         firstFrameNum = frameNum
     }
     else {
-      reads = frames[frameNum].reads;
+      frame = frames[frameNum];
     }
 
     if (tokens[1] == 'screenshot') {
@@ -78,10 +81,17 @@ function processTrace() {
       var nGroups = 0, nAccesses = 0;
       for (var t = 1; t < tokens.length; t++, nGroups++) {
         var accessFields = tokens[t].split(':')
+        var accessTypes = accessFields[0];
+        var accesses;
+        switch(accessTypes) {
+          case 'r': accesses = frame.reads; break;
+          case 'w': accesses = frame.writes; break;
+          case 'x': accesses = frame.executes; break;
+        }
         var rangeStart = parseInt(accessFields[1])
         var rangeLen = parseInt(accessFields[2])
         for (var a = 0; a < rangeLen; a++, nAccesses++) {
-          reads[rangeStart + a] = 1
+          accesses[rangeStart + a] = 1
         }
       }
     }
@@ -153,6 +163,7 @@ var startFrameNum = startAtTime * fps * timeScale;
 var frameNum = startFrameNum;
 var currentScreenshotImage;
 var loadingScreenshot;
+var saveFrameSeq = 0;
 
 function draw() {
   if (frameNum > endFrameNum - firstFrameNum) {
@@ -212,7 +223,8 @@ function draw() {
   }
 
   if (saveAllFrames && firstLoop) {
-    saveCanvas("frame" + frameData.timestamp, "png");
+    saveCanvas("frame" + saveFrameSeq, "png");
+    saveFrameSeq++;
   }
 
   frameNum++;
@@ -226,12 +238,18 @@ function updateTraceGraphics(frameData) {
   if (!frameData)
     return;
 
-  var reads = frameData.reads;
+  tg.noStroke();
+  tg.fill(readColor);
+  drawAccesses(tg, frameData.reads);
+  tg.fill(writeColor);
+  drawAccesses(tg, frameData.writes);
+  tg.fill(executeColor);
+  drawAccesses(tg, frameData.executes);
+}
 
-  for (address in reads) {
+function drawAccesses(tg, accesses) {
+  for (address in accesses) {
     var xy = hilbert.d2xy(8, address);
-    tg.noStroke();
-    tg.fill(255);
     tg.rect(xy[0] * mapScale, xy[1] * mapScale, mapScale, mapScale);
   }
 }
