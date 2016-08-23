@@ -221,6 +221,13 @@ def printInstructionAccesses(time, instruction):
 	for access in instruction.accesses:
 		print time, "%04x" % access.address, access.direction
 
+addressHooks = [1]
+
+def printAddressValue(address):
+	value = readMemory(address)
+	print "%d %04x v %02x" % (int(time), address, value)
+
+
 def processStepLines(lines):
 	if (len(lines) != 1):
 		print len(lines), "lines??"
@@ -238,11 +245,11 @@ def processStepLines(lines):
 	ipHex, instruction, aHex, xHex, yHex, time = groups
 
 	parsed = parseInstruction(instruction, ipHex, aHex, xHex, yHex, time)
+	printInstructionAccesses(time, parsed)
 	for access in parsed.accesses:
-		if access.address == 1:
-			value = readMemory(access.address)
-			print "access to $0001: value = $%04x" % value
-			printInstructionAccesses(time, parsed)
+		for addressHook in addressHooks:
+			if access.address == addressHook:
+				printAddressValue(addressHook)
 
 	return int(time)
 
@@ -288,6 +295,9 @@ while True:
 	time = processStepLines(lines)
 	if not firstInstructionAt:
 		firstInstructionAt = time
+		for addressHook in addressHooks:
+			printAddressValue(addressHook)
+
 	if (time - firstInstructionAt) > endAt:
 		break
 
