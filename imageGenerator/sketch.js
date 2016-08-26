@@ -78,28 +78,33 @@ function processTrace() {
       frame.screenshot = tokens[2];
     }
     else {
-      var nGroups = 0, nAccesses = 0;
+      var nGroups = 0;
       for (var t = 1; t < tokens.length; t++, nGroups++) {
         var fields = tokens[t].split(':')
         var type = fields[0];
-        var accesses;
-        switch(type) {
-          case 'r': accesses = frame.reads; break;
-          case 'w': accesses = frame.writes; break;
-          case 'x': accesses = frame.executes; break;
-          default: continue;
-        }
-        var rangeStart = parseInt(fields[1])
-        var rangeLen = parseInt(fields[2])
-        for (var a = 0; a < rangeLen; a++, nAccesses++) {
-          accesses[rangeStart + a] = 1
-        }
+        parseAccesses(frame, fields);
       }
     }
   }
 
   trace = null;
   console.log(frames.length);
+}
+
+function parseAccesses(frame, fields) {
+  var accesses;
+  var type = fields[0];
+  switch(type) {
+    case 'r': accesses = frame.reads; break;
+    case 'w': accesses = frame.writes; break;
+    case 'x': accesses = frame.executes; break;
+    default: return;
+  }
+  var rangeStart = parseInt(fields[1])
+  var rangeLen = parseInt(fields[2])
+  for (var a = 0; a < rangeLen; a++) {
+    accesses[rangeStart + a] = 1
+  }
 }
 
 function printMap() {
