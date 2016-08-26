@@ -304,7 +304,7 @@ while True:
 	if fps:
 		frameNumber = floor(time / (1000000 / fps))
 		if frameNumber != lastSavedFrame:
-			fileName = "screenshot_" + str(time)
+			fileName = "screenshot_%10d" % time
 			filePath = os.getcwd() + "/" + fileName
 			command = "screenshot \"" + filePath + "\" 2" # PNG format=2
 			talker.talk(command)
