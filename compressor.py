@@ -5,11 +5,16 @@ import sys
 class FrameData:
 	def __init__(self, sequence, time):
 		self.addresses = {}
+		self.values = {}
 		self.sequence = sequence
 		self.time = time
 
 	def output(self):
 		s = []
+		for address in self.values:
+			value = self.values[address]
+			s.append("v:%d:%d" % (address, value))
+			
 		for direction in self.addresses:
 			accesses = list(set(self.addresses[direction]))
 			accesses.sort()
@@ -32,12 +37,17 @@ class FrameData:
 
 
 	def parse(self, fields):
+		lineType = fields[2]
 		address = int(fields[1], 16)
-		direction = fields[2]
-		if not direction in self.addresses:
-			self.addresses[direction] = []
+		if lineType == 'v':
+			value = int(fields[3], 16)			
+			self.values[address] = value
+		else:
+			direction = lineType
+			if not direction in self.addresses:
+				self.addresses[direction] = []
 
-		self.addresses[direction].append(address)
+			self.addresses[direction].append(address)
 
 f = None
 frameDuration = 10

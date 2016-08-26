@@ -1,5 +1,5 @@
 // configuration
-var traceFileName = 'simple_basic.ctrace';
+var traceFileName = 'reset.ctrace';
 var mapScale = 2;
 var timeScale = 1;
 var startAtTime = 0;
@@ -15,6 +15,7 @@ var endFrameNum = 0;
 var firstLoop = true;
 var frames = [];
 var firstFrameNum;
+var lastBanks = { basic: true, io: true, char: false, kernal: true };
 
 var microsecsPerFrame = Math.floor(1000000 / fps);
 
@@ -28,6 +29,11 @@ var screenshotHeight = 272;
 var executeColor = '#ffffff';
 var readColor = '#00ff00';
 var writeColor = '#ff0000';
+var ramColor = '#004000';
+var romColor = '#000080';
+var ioColor = '#800000';
+
+var bankLayerNames = ['ram', 'basic', 'io', 'char', 'kernal'];
 
 function preload() {
   trace = loadStrings('assets/traces/' + traceFileName);
@@ -36,7 +42,6 @@ function preload() {
 function setup() {
   createCanvas(512 + screenshotWidth, 512);
   traceGraphics = createGraphics(512 * density, 512 * density);
-  mapGraphics = createGraphics(512 * density, 512 * density);
   setFrameRate(fps);
 
   printMap();
@@ -63,7 +68,8 @@ function processTrace() {
         time: timestamp / 1000000,
         reads: [],
         writes: [],
-        executes: []
+        executes: [],
+        banks: lastBanks
       };
       frames[frameNum] = frame;
       endFrameNum = frameNum;
@@ -78,20 +84,15 @@ function processTrace() {
       frame.screenshot = tokens[2];
     }
     else {
-      var nGroups = 0, nAccesses = 0;
+      var nGroups = 0;
       for (var t = 1; t < tokens.length; t++, nGroups++) {
-        var accessFields = tokens[t].split(':')
-        var accessTypes = accessFields[0];
-        var accesses;
-        switch(accessTypes) {
-          case 'r': accesses = frame.reads; break;
-          case 'w': accesses = frame.writes; break;
-          case 'x': accesses = frame.executes; break;
+        var fields = tokens[t].split(':')
+        var type = fields[0];
+        if (type == 'v') {
+          parseMemoryValue(frame, fields)
         }
-        var rangeStart = parseInt(accessFields[1])
-        var rangeLen = parseInt(accessFields[2])
-        for (var a = 0; a < rangeLen; a++, nAccesses++) {
-          accesses[rangeStart + a] = 1
+        else {
+          parseAccesses(frame, fields);
         }
       }
     }
@@ -101,13 +102,50 @@ function processTrace() {
   console.log(frames.length);
 }
 
+
+function parseMemoryValue(frame, fields) {
+  var address = parseInt(fields[1])
+  var value = parseInt(fields[2])
+  if (address == 1) {
+    // https://www.c64-wiki.com/index.php/Bank_Switching
+    var loram = (value & 1) != 0;
+    var hiram = (value & 2) != 0;
+    var charen = (value & 4) != 0;
+    frame.banks.ram = true;
+    frame.banks.basic = hiram && loram;
+    frame.banks.io = charen && (hiram || loram);
+    frame.banks.char = !charen && (hiram || loram);
+    frame.banks.kernal = hiram;
+    lastBanks = frame.banks;
+  }
+}
+
+function parseAccesses(frame, fields) {
+  var accesses;
+  var type = fields[0];
+  switch(type) {
+    case 'r': accesses = frame.reads; break;
+    case 'w': accesses = frame.writes; break;
+    case 'x': accesses = frame.executes; break;
+    default: return;
+  }
+  var rangeStart = parseInt(fields[1])
+  var rangeLen = parseInt(fields[2])
+  for (var a = 0; a < rangeLen; a++) {
+    accesses[rangeStart + a] = 1
+  }
+}
+
 function printMap() {
-  var mg = mapGraphics;
+  mapGraphics = {};
+  for (var i=0; i<bankLayerNames.length; i++) {
+    var g = createGraphics(512 * density, 512 * density);
+    g.textAlign(CENTER, CENTER);
+    g.textSize(12);
+    mapGraphics[bankLayerNames[i]] = g;
+  }
 
-  mg.textAlign(CENTER, CENTER);
-  mg.textSize(12);
-
-  function addrBlock(color, desc) {
+  function addrBlock(mg, color, desc) {
     return function(x, y, size) {
       x *= mapScale * density;
       y *= mapScale * density;
@@ -119,32 +157,29 @@ function printMap() {
       mg.text(desc, x, y, size, size);
     };
   }
-  var ramColor = '#004000';
-  var romColor = '#000080';
-  var ioColor = '#800000';
 
-  hilbertBlock(8, 0x0000, 0x10000, addrBlock(ramColor, "RAM"))
+  hilbertBlock(8, 0x0000, 0x10000, addrBlock(mapGraphics.ram, ramColor, "RAM"))
 
-  hilbertBlock(8, 0x0000, 0x0100, addrBlock(ramColor, "System vars"));
-  hilbertBlock(8, 0x0100, 0x0100, addrBlock(ramColor, "Stack"));
-  hilbertBlock(8, 0x0200, 0x0100, addrBlock(ramColor, "System vars"));
-  hilbertBlock(8, 0x0300, 0x0100, addrBlock(ramColor, "System vars"));
+  hilbertBlock(8, 0x0000, 0x0100, addrBlock(mapGraphics.ram, ramColor, "Zero page"));
+  hilbertBlock(8, 0x0100, 0x0100, addrBlock(mapGraphics.ram, ramColor, "Stack"));
   
-  hilbertBlock(8, 0x0400, 0x0400, addrBlock(ramColor, "Video memory"));
+  hilbertBlock(8, 0x0400, 0x0400, addrBlock(mapGraphics.ram, ramColor, "Video memory"));
 
-  hilbertBlock(8, 0xA000, 0x1000, addrBlock(romColor, "BASIC ROM"))
-  hilbertBlock(8, 0xB000, 0x1000, addrBlock(romColor, "BASIC ROM"))
+  hilbertBlock(8, 0xA000, 0x1000, addrBlock(mapGraphics.basic, romColor, "BASIC ROM"))
+  hilbertBlock(8, 0xB000, 0x1000, addrBlock(mapGraphics.basic, romColor, "BASIC ROM"))
     
-  hilbertBlock(8, 0xD000, 0x0400, addrBlock(ioColor, "VIC-II"))
-  hilbertBlock(8, 0xD400, 0x0400, addrBlock(ioColor, "SID"))
-  hilbertBlock(8, 0xD800, 0x0400, addrBlock(ioColor, "Color RAM"))
-  hilbertBlock(8, 0xDC00, 0x0100, addrBlock(ioColor, "CIA #1"))
-  hilbertBlock(8, 0xDD00, 0x0100, addrBlock(ioColor, "CIA #2"))
-  hilbertBlock(8, 0xDE00, 0x0100, addrBlock(ioColor, "I/O #1"))
-  hilbertBlock(8, 0xDF00, 0x0100, addrBlock(ioColor, "I/O #2"))
+  hilbertBlock(8, 0xD000, 0x0400, addrBlock(mapGraphics.io, ioColor, "VIC-II"))
+  hilbertBlock(8, 0xD400, 0x0400, addrBlock(mapGraphics.io, ioColor, "SID"))
+  hilbertBlock(8, 0xD800, 0x0400, addrBlock(mapGraphics.io, ioColor, "Color RAM"))
+  hilbertBlock(8, 0xDC00, 0x0100, addrBlock(mapGraphics.io, ioColor, "CIA #1"))
+  hilbertBlock(8, 0xDD00, 0x0100, addrBlock(mapGraphics.io, ioColor, "CIA #2"))
+  hilbertBlock(8, 0xDE00, 0x0100, addrBlock(mapGraphics.io, ioColor, "I/O #1"))
+  hilbertBlock(8, 0xDF00, 0x0100, addrBlock(mapGraphics.io, ioColor, "I/O #2"))
   
-  hilbertBlock(8, 0xE000, 0x1000, addrBlock(romColor, "KERNAL ROM"));
-  hilbertBlock(8, 0xF000, 0x1000, addrBlock(romColor, "KERNAL ROM"));
+  hilbertBlock(8, 0xD000, 0x1000, addrBlock(mapGraphics.char, romColor, "Character ROM"));
+
+  hilbertBlock(8, 0xE000, 0x1000, addrBlock(mapGraphics.kernal, romColor, "KERNAL ROM"));
+  hilbertBlock(8, 0xF000, 0x1000, addrBlock(mapGraphics.kernal, romColor, "KERNAL ROM"));
 }
 
 function hilbertBlock(maxLevel, location, sizeLinear, callback) {
@@ -177,6 +212,7 @@ function draw() {
 
   if (!frameData) {
     console.log("empty frame " + frameNum);
+    frameNum++;
     return;
   }
 
@@ -205,13 +241,21 @@ function draw() {
   }
 
   background(0);
-  image(mapGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
+  for (var i=0; i<bankLayerNames.length; i++) {
+    var bankLayerName = bankLayerNames[i];
+    if (frameData.banks[bankLayerName]) {
+      var bankLayer = mapGraphics[bankLayerName];
+      image(bankLayer, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
+    }
+  }
   updateTraceGraphics(frameData);
   blendMode(ADD);
   image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   blendMode(BLEND);
 
-  image(currentScreenshotImage, 512, 0);
+  if (currentScreenshotImage != null) {
+    image(currentScreenshotImage, 512, 0);
+  }
 
   if (showText) {
     stroke(255);
