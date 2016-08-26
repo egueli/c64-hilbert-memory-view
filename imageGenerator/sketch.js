@@ -212,6 +212,7 @@ function draw() {
 
   if (!frameData) {
     console.log("empty frame " + frameNum);
+    frameNum++;
     return;
   }
 
