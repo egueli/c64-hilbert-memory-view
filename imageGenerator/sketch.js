@@ -15,7 +15,7 @@ var endFrameNum = 0;
 var firstLoop = true;
 var frames = [];
 var firstFrameNum;
-var lastBanks = { loram: true, hiram: true, charen: true };
+var lastBanks = { basic: true, io: true, char: false, kernal: true };
 
 var microsecsPerFrame = Math.floor(1000000 / fps);
 
@@ -37,7 +37,6 @@ function preload() {
 function setup() {
   createCanvas(512 + screenshotWidth, 512);
   traceGraphics = createGraphics(512 * density, 512 * density);
-  mapGraphics = createGraphics(512 * density, 512 * density);
   setFrameRate(fps);
 
   printMap();
@@ -103,9 +102,14 @@ function parseMemoryValue(frame, fields) {
   var address = parseInt(fields[1])
   var value = parseInt(fields[2])
   if (address == 1) {
-    frame.banks.loram = (value & 1) != 0;
-    frame.banks.hiram = (value & 2) != 0;
-    frame.banks.charen = (value & 4) != 0;
+    // https://www.c64-wiki.com/index.php/Bank_Switching
+    var loram = (value & 1) != 0;
+    var hiram = (value & 2) != 0;
+    var charen = (value & 4) != 0;
+    frame.banks.basic = hiram && loram;
+    frame.banks.io = charen && (hiram || loram);
+    frame.banks.char = !charen && (hiram || loram);
+    frame.banks.kernal = hiram;
     lastBanks = frame.banks;
   }
 }
@@ -127,12 +131,16 @@ function parseAccesses(frame, fields) {
 }
 
 function printMap() {
-  var mg = mapGraphics;
+  mapGraphics = {};
+  var bankNames = ['ram', 'basic', 'io', 'char', 'kernal'];
+  for (var i=0; i<bankNames.length; i++) {
+    var g = createGraphics(512 * density, 512 * density);
+    g.textAlign(CENTER, CENTER);
+    g.textSize(12);
+    mapGraphics[bankNames[i]] = g;
+  }
 
-  mg.textAlign(CENTER, CENTER);
-  mg.textSize(12);
-
-  function addrBlock(color, desc) {
+  function addrBlock(mg, color, desc) {
     return function(x, y, size) {
       x *= mapScale * density;
       y *= mapScale * density;
@@ -148,28 +156,28 @@ function printMap() {
   var romColor = '#000080';
   var ioColor = '#800000';
 
-  hilbertBlock(8, 0x0000, 0x10000, addrBlock(ramColor, "RAM"))
+  hilbertBlock(8, 0x0000, 0x10000, addrBlock(mapGraphics.ram, ramColor, "RAM"))
 
-  hilbertBlock(8, 0x0000, 0x0100, addrBlock(ramColor, "System vars"));
-  hilbertBlock(8, 0x0100, 0x0100, addrBlock(ramColor, "Stack"));
-  hilbertBlock(8, 0x0200, 0x0100, addrBlock(ramColor, "System vars"));
-  hilbertBlock(8, 0x0300, 0x0100, addrBlock(ramColor, "System vars"));
+  hilbertBlock(8, 0x0000, 0x0100, addrBlock(mapGraphics.ram, ramColor, "Zero page"));
+  hilbertBlock(8, 0x0100, 0x0100, addrBlock(mapGraphics.ram, ramColor, "Stack"));
+  hilbertBlock(8, 0x0200, 0x0100, addrBlock(mapGraphics.ram, ramColor, "System vars"));
+  hilbertBlock(8, 0x0300, 0x0100, addrBlock(mapGraphics.ram, ramColor, "System vars"));
   
-  hilbertBlock(8, 0x0400, 0x0400, addrBlock(ramColor, "Video memory"));
+  hilbertBlock(8, 0x0400, 0x0400, addrBlock(mapGraphics.ram, ramColor, "Video memory"));
 
-  hilbertBlock(8, 0xA000, 0x1000, addrBlock(romColor, "BASIC ROM"))
-  hilbertBlock(8, 0xB000, 0x1000, addrBlock(romColor, "BASIC ROM"))
+  hilbertBlock(8, 0xA000, 0x1000, addrBlock(mapGraphics.ram, romColor, "BASIC ROM"))
+  hilbertBlock(8, 0xB000, 0x1000, addrBlock(mapGraphics.ram, romColor, "BASIC ROM"))
     
-  hilbertBlock(8, 0xD000, 0x0400, addrBlock(ioColor, "VIC-II"))
-  hilbertBlock(8, 0xD400, 0x0400, addrBlock(ioColor, "SID"))
-  hilbertBlock(8, 0xD800, 0x0400, addrBlock(ioColor, "Color RAM"))
-  hilbertBlock(8, 0xDC00, 0x0100, addrBlock(ioColor, "CIA #1"))
-  hilbertBlock(8, 0xDD00, 0x0100, addrBlock(ioColor, "CIA #2"))
-  hilbertBlock(8, 0xDE00, 0x0100, addrBlock(ioColor, "I/O #1"))
-  hilbertBlock(8, 0xDF00, 0x0100, addrBlock(ioColor, "I/O #2"))
+  hilbertBlock(8, 0xD000, 0x0400, addrBlock(mapGraphics.ram, ioColor, "VIC-II"))
+  hilbertBlock(8, 0xD400, 0x0400, addrBlock(mapGraphics.ram, ioColor, "SID"))
+  hilbertBlock(8, 0xD800, 0x0400, addrBlock(mapGraphics.ram, ioColor, "Color RAM"))
+  hilbertBlock(8, 0xDC00, 0x0100, addrBlock(mapGraphics.ram, ioColor, "CIA #1"))
+  hilbertBlock(8, 0xDD00, 0x0100, addrBlock(mapGraphics.ram, ioColor, "CIA #2"))
+  hilbertBlock(8, 0xDE00, 0x0100, addrBlock(mapGraphics.ram, ioColor, "I/O #1"))
+  hilbertBlock(8, 0xDF00, 0x0100, addrBlock(mapGraphics.ram, ioColor, "I/O #2"))
   
-  hilbertBlock(8, 0xE000, 0x1000, addrBlock(romColor, "KERNAL ROM"));
-  hilbertBlock(8, 0xF000, 0x1000, addrBlock(romColor, "KERNAL ROM"));
+  hilbertBlock(8, 0xE000, 0x1000, addrBlock(mapGraphics.ram, romColor, "KERNAL ROM"));
+  hilbertBlock(8, 0xF000, 0x1000, addrBlock(mapGraphics.ram, romColor, "KERNAL ROM"));
 }
 
 function hilbertBlock(maxLevel, location, sizeLinear, callback) {
@@ -229,10 +237,8 @@ function draw() {
     }
   }
 
-  console.log('banks', frameData.banks);
-
   background(0);
-  image(mapGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
+  image(mapGraphics.ram, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   updateTraceGraphics(frameData);
   blendMode(ADD);
   image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
