@@ -211,7 +211,9 @@ function draw() {
   image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
   blendMode(BLEND);
 
-  image(currentScreenshotImage, 512, 0);
+  if (currentScreenshotImage != null) {
+    image(currentScreenshotImage, 512, 0);
+  }
 
   if (showText) {
     stroke(255);
