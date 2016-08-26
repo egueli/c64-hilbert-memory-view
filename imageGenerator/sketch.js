@@ -29,6 +29,11 @@ var screenshotHeight = 272;
 var executeColor = '#ffffff';
 var readColor = '#00ff00';
 var writeColor = '#ff0000';
+var ramColor = '#004000';
+var romColor = '#000080';
+var ioColor = '#800000';
+
+var bankLayerNames = ['ram', 'basic', 'io', 'char', 'kernal'];
 
 function preload() {
   trace = loadStrings('assets/traces/' + traceFileName);
@@ -106,6 +111,7 @@ function parseMemoryValue(frame, fields) {
     var loram = (value & 1) != 0;
     var hiram = (value & 2) != 0;
     var charen = (value & 4) != 0;
+    frame.banks.ram = true;
     frame.banks.basic = hiram && loram;
     frame.banks.io = charen && (hiram || loram);
     frame.banks.char = !charen && (hiram || loram);
@@ -132,12 +138,11 @@ function parseAccesses(frame, fields) {
 
 function printMap() {
   mapGraphics = {};
-  var bankNames = ['ram', 'basic', 'io', 'char', 'kernal'];
-  for (var i=0; i<bankNames.length; i++) {
+  for (var i=0; i<bankLayerNames.length; i++) {
     var g = createGraphics(512 * density, 512 * density);
     g.textAlign(CENTER, CENTER);
     g.textSize(12);
-    mapGraphics[bankNames[i]] = g;
+    mapGraphics[bankLayerNames[i]] = g;
   }
 
   function addrBlock(mg, color, desc) {
@@ -152,32 +157,29 @@ function printMap() {
       mg.text(desc, x, y, size, size);
     };
   }
-  var ramColor = '#004000';
-  var romColor = '#000080';
-  var ioColor = '#800000';
 
   hilbertBlock(8, 0x0000, 0x10000, addrBlock(mapGraphics.ram, ramColor, "RAM"))
 
   hilbertBlock(8, 0x0000, 0x0100, addrBlock(mapGraphics.ram, ramColor, "Zero page"));
   hilbertBlock(8, 0x0100, 0x0100, addrBlock(mapGraphics.ram, ramColor, "Stack"));
-  hilbertBlock(8, 0x0200, 0x0100, addrBlock(mapGraphics.ram, ramColor, "System vars"));
-  hilbertBlock(8, 0x0300, 0x0100, addrBlock(mapGraphics.ram, ramColor, "System vars"));
   
   hilbertBlock(8, 0x0400, 0x0400, addrBlock(mapGraphics.ram, ramColor, "Video memory"));
 
-  hilbertBlock(8, 0xA000, 0x1000, addrBlock(mapGraphics.ram, romColor, "BASIC ROM"))
-  hilbertBlock(8, 0xB000, 0x1000, addrBlock(mapGraphics.ram, romColor, "BASIC ROM"))
+  hilbertBlock(8, 0xA000, 0x1000, addrBlock(mapGraphics.basic, romColor, "BASIC ROM"))
+  hilbertBlock(8, 0xB000, 0x1000, addrBlock(mapGraphics.basic, romColor, "BASIC ROM"))
     
-  hilbertBlock(8, 0xD000, 0x0400, addrBlock(mapGraphics.ram, ioColor, "VIC-II"))
-  hilbertBlock(8, 0xD400, 0x0400, addrBlock(mapGraphics.ram, ioColor, "SID"))
-  hilbertBlock(8, 0xD800, 0x0400, addrBlock(mapGraphics.ram, ioColor, "Color RAM"))
-  hilbertBlock(8, 0xDC00, 0x0100, addrBlock(mapGraphics.ram, ioColor, "CIA #1"))
-  hilbertBlock(8, 0xDD00, 0x0100, addrBlock(mapGraphics.ram, ioColor, "CIA #2"))
-  hilbertBlock(8, 0xDE00, 0x0100, addrBlock(mapGraphics.ram, ioColor, "I/O #1"))
-  hilbertBlock(8, 0xDF00, 0x0100, addrBlock(mapGraphics.ram, ioColor, "I/O #2"))
+  hilbertBlock(8, 0xD000, 0x0400, addrBlock(mapGraphics.io, ioColor, "VIC-II"))
+  hilbertBlock(8, 0xD400, 0x0400, addrBlock(mapGraphics.io, ioColor, "SID"))
+  hilbertBlock(8, 0xD800, 0x0400, addrBlock(mapGraphics.io, ioColor, "Color RAM"))
+  hilbertBlock(8, 0xDC00, 0x0100, addrBlock(mapGraphics.io, ioColor, "CIA #1"))
+  hilbertBlock(8, 0xDD00, 0x0100, addrBlock(mapGraphics.io, ioColor, "CIA #2"))
+  hilbertBlock(8, 0xDE00, 0x0100, addrBlock(mapGraphics.io, ioColor, "I/O #1"))
+  hilbertBlock(8, 0xDF00, 0x0100, addrBlock(mapGraphics.io, ioColor, "I/O #2"))
   
-  hilbertBlock(8, 0xE000, 0x1000, addrBlock(mapGraphics.ram, romColor, "KERNAL ROM"));
-  hilbertBlock(8, 0xF000, 0x1000, addrBlock(mapGraphics.ram, romColor, "KERNAL ROM"));
+  hilbertBlock(8, 0xD000, 0x1000, addrBlock(mapGraphics.char, romColor, "Character ROM"));
+
+  hilbertBlock(8, 0xE000, 0x1000, addrBlock(mapGraphics.kernal, romColor, "KERNAL ROM"));
+  hilbertBlock(8, 0xF000, 0x1000, addrBlock(mapGraphics.kernal, romColor, "KERNAL ROM"));
 }
 
 function hilbertBlock(maxLevel, location, sizeLinear, callback) {
@@ -238,7 +240,13 @@ function draw() {
   }
 
   background(0);
-  image(mapGraphics.ram, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
+  for (var i=0; i<bankLayerNames.length; i++) {
+    var bankLayerName = bankLayerNames[i];
+    if (frameData.banks[bankLayerName]) {
+      var bankLayer = mapGraphics[bankLayerName];
+      image(bankLayer, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
+    }
+  }
   updateTraceGraphics(frameData);
   blendMode(ADD);
   image(traceGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
