@@ -1,5 +1,5 @@
 // configuration
-var traceFileName = 'simple_basic.ctrace';
+var traceFileName = 'reset.ctrace';
 var mapScale = 2;
 var timeScale = 1;
 var startAtTime = 0;
@@ -63,7 +63,8 @@ function processTrace() {
         time: timestamp / 1000000,
         reads: [],
         writes: [],
-        executes: []
+        executes: [],
+        values: []
       };
       frames[frameNum] = frame;
       endFrameNum = frameNum;
@@ -82,13 +83,24 @@ function processTrace() {
       for (var t = 1; t < tokens.length; t++, nGroups++) {
         var fields = tokens[t].split(':')
         var type = fields[0];
-        parseAccesses(frame, fields);
+        if (type == 'v') {
+          parseMemoryValue(frame, fields)
+        }
+        else {
+          parseAccesses(frame, fields);
+        }
       }
     }
   }
 
   trace = null;
   console.log(frames.length);
+}
+
+function parseMemoryValue(frame, fields) {
+  var address = parseInt(fields[1])
+  var value = parseInt(fields[2])
+  frame.values[address] = value;
 }
 
 function parseAccesses(frame, fields) {
@@ -209,6 +221,8 @@ function draw() {
       return;
     }
   }
+
+  console.log('values', frameData.values);
 
   background(0);
   image(mapGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
