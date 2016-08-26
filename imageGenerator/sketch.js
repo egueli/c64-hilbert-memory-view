@@ -15,6 +15,7 @@ var endFrameNum = 0;
 var firstLoop = true;
 var frames = [];
 var firstFrameNum;
+var lastBanks = { loram: true, hiram: true, charen: true };
 
 var microsecsPerFrame = Math.floor(1000000 / fps);
 
@@ -64,7 +65,7 @@ function processTrace() {
         reads: [],
         writes: [],
         executes: [],
-        values: []
+        banks: lastBanks
       };
       frames[frameNum] = frame;
       endFrameNum = frameNum;
@@ -97,10 +98,16 @@ function processTrace() {
   console.log(frames.length);
 }
 
+
 function parseMemoryValue(frame, fields) {
   var address = parseInt(fields[1])
   var value = parseInt(fields[2])
-  frame.values[address] = value;
+  if (address == 1) {
+    frame.banks.loram = (value & 1) != 0;
+    frame.banks.hiram = (value & 2) != 0;
+    frame.banks.charen = (value & 4) != 0;
+    lastBanks = frame.banks;
+  }
 }
 
 function parseAccesses(frame, fields) {
@@ -222,7 +229,7 @@ function draw() {
     }
   }
 
-  console.log('values', frameData.values);
+  console.log('banks', frameData.banks);
 
   background(0);
   image(mapGraphics, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
