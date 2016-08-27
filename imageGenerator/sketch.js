@@ -262,8 +262,12 @@ function draw() {
     fill(255);
     textSize(40);
     textAlign(RIGHT, BOTTOM);
-    text(frameNum, width, height - 40);
-    text(frameData.timestamp, 0, 0, width, height);
+    var tFrames = int(frameData.time * fps) % fps;
+    var tSeconds = int(frameData.time) % 60;
+    var tMinutes = int(frameData.time / 60) % 60;
+    var tHours = int(frameData.time / 3600);
+    var timecode = tHours + ":" + padToTwo(tMinutes) + ":" + padToTwo(tSeconds) + ":" + padToTwo(tFrames);
+    text(timecode, 0, 0, width, height);
   }
 
   if (saveAllFrames && firstLoop) {
@@ -272,6 +276,11 @@ function draw() {
   }
 
   frameNum++;
+}
+
+function padToTwo(number) {
+  if (number<100) { number = ("0"+number).slice(-2); }
+  return number;
 }
 
 function updateTraceGraphics(frameData) {
