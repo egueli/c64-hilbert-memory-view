@@ -1,5 +1,6 @@
 // configuration
-var traceFileName = 'reset.ctrace';
+var traceFileName = 'assets/traces/reset.ctrace';
+var screenshotsBasePath = 'assets/traces/';
 var mapScale = 2;
 var timeScale = 1;
 var startAtTime = 0;
@@ -36,7 +37,7 @@ var ioColor = '#800000';
 var bankLayerNames = ['ram', 'basic', 'io', 'char', 'kernal'];
 
 function preload() {
-  trace = loadStrings('assets/traces/' + traceFileName);
+  trace = loadStrings(traceFileName);
 }
 
 function setup() {
@@ -234,7 +235,7 @@ function draw() {
       }
     }
     else {
-      currentScreenshotImage = loadImage("assets/traces/" + frameData.screenshot);
+      currentScreenshotImage = loadImage(screenshotsBasePath + frameData.screenshot);
       loadingScreenshot = true;
       return;
     }
