@@ -55,10 +55,16 @@ function setup() {
 
 function processTrace() {
   console.log("will read " + trace.length + " lines")
+  var firstTimestamp = 0;
   for (var i=0; i<trace.length; i++) {
     var line = trace[i];
     var tokens = line.split(" ");
     var timestamp = tokens[0];
+    if (!firstTimestamp) {
+      firstTimestamp = timestamp;
+      console.log("first timestamp:", firstTimestamp);
+    }
+    timestamp = timestamp - firstTimestamp;
 
 
     var frameNum = Math.floor(timestamp / microsecsPerFrame * timeScale);
