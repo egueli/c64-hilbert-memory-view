@@ -71,8 +71,11 @@ function processTrace() {
       frameNum++;
       if (frameNum > 3600) break;
       var startTS = timeScale;
-      var endTS = timeScale * 1000;
-      var currentTimeScale = map(timestamp, 0, 10000000, startTS, endTS);
+      var endTS = timeScale * 100000;
+      var logStartTS = log(startTS);
+      var logEndTS = log(endTS);
+      var logTimeScale = map(frameNum, 0, 3600, logStartTS, logEndTS);
+      var currentTimeScale = exp(logTimeScale);
       nextFrameAt = timestamp + microsecsPerFrame / currentTimeScale;
       //console.log("line", i, "timestamp", timestamp, "new frame", frameNum, " next frame at", nextFrameAt, "time scale", currentTimeScale);
       frame = {
