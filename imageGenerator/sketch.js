@@ -10,7 +10,6 @@ var showText = true;
 var fps = 60;
 var traceClearAlpha = 20;
 
-
 // global variables
 var endFrameNum = 0;
 var firstLoop = true;
@@ -70,10 +69,16 @@ function processTrace() {
 
     if (timestamp >= nextFrameAt) {
       frameNum++;
-      nextFrameAt += microsecsPerFrame;
+      if (frameNum > 3600) break;
+      var startTS = timeScale;
+      var endTS = timeScale * 1000;
+      var currentTimeScale = map(timestamp, 0, 10000000, startTS, endTS);
+      nextFrameAt = timestamp + microsecsPerFrame / currentTimeScale;
+      //console.log("line", i, "timestamp", timestamp, "new frame", frameNum, " next frame at", nextFrameAt, "time scale", currentTimeScale);
       frame = {
         timestamp: timestamp,
         time: timestamp / 1000000,
+        timeScale: currentTimeScale,
         reads: [],
         writes: [],
         executes: [],
@@ -202,7 +207,7 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 }
 
 
-var startFrameNum = startAtTime * fps * timeScale;
+var startFrameNum = startAtTime * fps;
 var frameNum = startFrameNum;
 var currentScreenshotImage;
 var loadingScreenshot;
@@ -210,7 +215,7 @@ var saveFrameSeq = 0;
 
 function draw() {
   if (frameNum > endFrameNum - firstFrameNum) {
-    console.log("end of trace, looping");
+    console.log("end of trace, looping; frameNum", frameNum, "firstFrameNum", firstFrameNum, "endFrameNum", endFrameNum);
     frameNum = startFrameNum;
     firstLoop = false;
     return;
@@ -270,6 +275,9 @@ function draw() {
     fill(255);
     textSize(40);
     textAlign(RIGHT, BOTTOM);
+
+    text("speed " + int(frameData.timeScale), 0, 0, width, height - 50);
+
     var tFrames = int(frameData.time * fps) % fps;
     var tSeconds = int(frameData.time) % 60;
     var tMinutes = int(frameData.time / 60) % 60;
