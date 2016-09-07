@@ -7,7 +7,7 @@ var startAtTime = 0;
 var stopAtTime = 100000;
 var saveAllFrames = false;
 var showText = true;
-var fps = 60;
+var fps = 50;
 var traceClearAlpha = 20;
 
 // global variables
@@ -282,7 +282,8 @@ function draw() {
     var tSeconds = int(frameData.time) % 60;
     var tMinutes = int(frameData.time / 60) % 60;
     var tHours = int(frameData.time / 3600);
-    var timecode = tHours + ":" + padToTwo(tMinutes) + ":" + padToTwo(tSeconds) + ":" + padToTwo(tFrames);
+    var tMicros = int(frameData.time * fps * microsecsPerFrame) % microsecsPerFrame;
+    var timecode = tHours + ":" + pad(tMinutes, 2) + ":" + pad(tSeconds, 2) + ":" + pad(tFrames, 2) + ":" + pad(tMicros, 5);
     text(timecode, 0, 0, width, height);
   }
 
@@ -294,8 +295,8 @@ function draw() {
   frameNum++;
 }
 
-function padToTwo(number) {
-  if (number<100) { number = ("0"+number).slice(-2); }
+function pad(number,d) {
+  if (number<pow(10, d)) { number = ("0"+number).slice(-d); }
   return number;
 }
 
