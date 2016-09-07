@@ -56,6 +56,8 @@ function setup() {
 function processTrace() {
   console.log("will read " + trace.length + " lines")
   var firstTimestamp = 0;
+  var frameNum = 0;
+  var nextFrameAt = 0;
   for (var i=0; i<trace.length; i++) {
     var line = trace[i];
     var tokens = line.split(" ");
@@ -66,10 +68,9 @@ function processTrace() {
     }
     timestamp = timestamp - firstTimestamp;
 
-
-    var frameNum = Math.floor(timestamp / microsecsPerFrame * timeScale);
-    var frame;
-    if (!frames[frameNum]) {
+    if (timestamp >= nextFrameAt) {
+      frameNum++;
+      nextFrameAt += microsecsPerFrame;
       frame = {
         timestamp: timestamp,
         time: timestamp / 1000000,
