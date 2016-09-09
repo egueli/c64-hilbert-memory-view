@@ -1,14 +1,18 @@
 // configuration
-var traceFileName = 'assets/traces/reset.ctrace';
-var screenshotsBasePath = 'assets/traces/';
+var traceFileName = 'assets/traces/terry/terry.ctrace';
+var screenshotsBasePath = 'assets/traces/terry/';
 var mapScale = 2;
-var timeScale = 1;
 var startAtTime = 0;
 var stopAtTime = 100000;
 var saveAllFrames = false;
 var showText = true;
 var fps = 50;
 var traceClearAlpha = 20;
+var frameLimit = 5000;
+var startTimeScale = 1;
+var startTimeScaleAt = 10000000;
+var endTimeScale = 1000;
+var endTimeScaleAt = 12000000;
 
 // global variables
 var endFrameNum = 0;
@@ -69,12 +73,10 @@ function processTrace() {
 
     if (timestamp >= nextFrameAt) {
       frameNum++;
-      if (frameNum > 3600) break;
-      var startTS = timeScale;
-      var endTS = timeScale * 100000;
-      var logStartTS = log(startTS);
-      var logEndTS = log(endTS);
-      var logTimeScale = map(frameNum, 0, 3600, logStartTS, logEndTS);
+      if (frameNum > frameLimit) break;
+      var logStartTS = log(startTimeScale);
+      var logEndTS = log(endTimeScale);
+      var logTimeScale = map(constrain(timestamp, startTimeScaleAt, endTimeScaleAt), startTimeScaleAt, endTimeScaleAt, logStartTS, logEndTS);
       var currentTimeScale = exp(logTimeScale);
       nextFrameAt = timestamp + microsecsPerFrame / currentTimeScale;
       //console.log("line", i, "timestamp", timestamp, "new frame", frameNum, " next frame at", nextFrameAt, "time scale", currentTimeScale);
