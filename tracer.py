@@ -312,6 +312,9 @@ conn.execute('''CREATE TABLE accesses
 conn.execute('''CREATE TABLE memory_values
 				  (id integer primary key autoincrement, timestamp integer, address integer, value integer)
 ''')
+conn.execute('''CREATE TABLE screenshots
+				  (id integer primary key autoincrement, timestamp integer, filename text)
+''')
 
 talker = ViceRemoteMonitorTalker()
 
@@ -336,12 +339,16 @@ while True:
 			command = "screenshot \"" + filePath + "\" 2" # PNG format=2
 			talker.talk(command)
 			lastSavedFrame = frameNumber
-			print time, "screenshot", fileName + ".png"
+			conn.execute(
+				'INSERT INTO screenshots(timestamp, filename) VALUES (?, ?)',
+				(time, fileName + ".png")
+			)
 
 
 conn.commit()
-conn.execute("CREATE INDEX timestamp ON accesses (timestamp)")
-conn.execute("CREATE INDEX timestamp ON memory_values (timestamp)")
+conn.execute("CREATE INDEX accesses_timestamp ON accesses (timestamp)")
+conn.execute("CREATE INDEX values_timestamp ON memory_values (timestamp)")
+conn.execute("CREATE INDEX screenshot_timestamp ON screenshots (timestamp)")
 conn.close()
 
 talker.close()
