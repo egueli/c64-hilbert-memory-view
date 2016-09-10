@@ -299,8 +299,10 @@ else:
 	endAt = float("inf")
 
 
-conn = sqlite3.connect(args.out[0])
-conn.execute("DROP TABLE IF EXISTS accesses")
+outFile = args.out[0]
+if os.path.isfile(outFile):
+	os.remove(outFile)
+conn = sqlite3.connect(outFile)
 conn.execute('''CREATE TABLE accesses
 	              (id integer primary key autoincrement, timestamp integer, type integer, address integer)
 ''')
