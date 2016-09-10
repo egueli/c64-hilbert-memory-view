@@ -6,6 +6,7 @@ import socket
 import re
 from math import floor
 import os
+import sqlite3
 
 class ViceRemoteMonitorTalker:
 	def __init__(self):
@@ -218,9 +219,12 @@ def parseInstruction(instruction, ipHex, aHex, xHex, yHex, time):
 	
 	raise Exception("unrecognized instruction: " + instruction)
 
-def outputInstructionAccesses(time, instruction):
+def outputInstructionAccesses(conn, time, instruction):
 	for access in instruction.accesses:
-		print time, "%04x" % access.address, access.direction
+		conn.execute(
+			'INSERT INTO accesses(timestamp, type, address) VALUES (?, ?, ?)',
+			(time, 'rwx'.index(access.direction), access.address)
+		)
 
 addressHooks = [1]
 
@@ -229,7 +233,7 @@ def outputAddressValue(address):
 	print "%d %04x v %02x" % (int(time), address, value)
 
 
-def processStepLines(lines):
+def processStepLines(conn, lines):
 	if (len(lines) != 1):
 		print len(lines), "lines??"
 		for line in lines:
@@ -246,7 +250,7 @@ def processStepLines(lines):
 	ipHex, instruction, aHex, xHex, yHex, time = groups
 
 	parsed = parseInstruction(instruction, ipHex, aHex, xHex, yHex, time)
-	outputInstructionAccesses(time, parsed)
+	outputInstructionAccesses(conn, time, parsed)
 	for access in parsed.accesses:
 		for addressHook in addressHooks:
 			if access.address == addressHook:
@@ -294,13 +298,20 @@ if args.end_at:
 else:
 	endAt = float("inf")
 
+
+conn = sqlite3.connect(args.out[0])
+conn.execute("DROP TABLE IF EXISTS accesses")
+conn.execute('''CREATE TABLE accesses
+	              (id integer primary key autoincrement, timestamp integer, type integer, address integer)
+''')
+
 talker = ViceRemoteMonitorTalker()
 
 lastSavedFrame = None
 firstInstructionAt = None
 while True:
 	lines = talker.talk("step")
-	time = processStepLines(lines)
+	time = processStepLines(conn, lines)
 	if not firstInstructionAt:
 		firstInstructionAt = time
 		for addressHook in addressHooks:
@@ -320,5 +331,8 @@ while True:
 			print time, "screenshot", fileName + ".png"
 
 
+conn.commit()
+conn.execute("CREATE INDEX timestamp ON accesses (timestamp)")
+conn.close()
 
 talker.close()
