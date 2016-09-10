@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import sys
 import socket
 import re
 from math import floor
@@ -254,15 +255,20 @@ def processStepLines(lines):
 	return int(time)
 
 
+class HelpPrintingParser(argparse.ArgumentParser): 
+   def error(self, message):
+      sys.stderr.write('error: %s\n' % message)
+      self.print_help(sys.stderr)
+      sys.exit(2)
 
-parser = argparse.ArgumentParser(description="Traces all memory accesses of the emulated CPU in a VICE instance.")
+parser = HelpPrintingParser(description="Traces all memory accesses of the emulated CPU in a VICE instance. Takes screenshots and monitors the value of some memory addresses, like $1")
 parser.add_argument('-r', '--reset',
                     help='resets the C64 at start',
                     action='store_true')
 parser.add_argument('-f', '--save-frames-fps')
 parser.add_argument('-e', '--end-at')
+parser.add_argument('out', nargs=1, help='the output database file')
 
-talker = ViceRemoteMonitorTalker()
 
 args = parser.parse_args()
 if args.reset:
@@ -287,6 +293,8 @@ if args.end_at:
 	endAt = floor(float(args.end_at) * 1000000)
 else:
 	endAt = float("inf")
+
+talker = ViceRemoteMonitorTalker()
 
 lastSavedFrame = None
 firstInstructionAt = None
