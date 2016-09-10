@@ -217,13 +217,13 @@ def parseInstruction(instruction, ipHex, aHex, xHex, yHex, time):
 	
 	raise Exception("unrecognized instruction: " + instruction)
 
-def printInstructionAccesses(time, instruction):
+def outputInstructionAccesses(time, instruction):
 	for access in instruction.accesses:
 		print time, "%04x" % access.address, access.direction
 
 addressHooks = [1]
 
-def printAddressValue(address):
+def outputAddressValue(address):
 	value = readMemory(address)
 	print "%d %04x v %02x" % (int(time), address, value)
 
@@ -245,11 +245,11 @@ def processStepLines(lines):
 	ipHex, instruction, aHex, xHex, yHex, time = groups
 
 	parsed = parseInstruction(instruction, ipHex, aHex, xHex, yHex, time)
-	printInstructionAccesses(time, parsed)
+	outputInstructionAccesses(time, parsed)
 	for access in parsed.accesses:
 		for addressHook in addressHooks:
 			if access.address == addressHook:
-				printAddressValue(addressHook)
+				outputAddressValue(addressHook)
 
 	return int(time)
 
@@ -296,7 +296,7 @@ while True:
 	if not firstInstructionAt:
 		firstInstructionAt = time
 		for addressHook in addressHooks:
-			printAddressValue(addressHook)
+			outputAddressValue(addressHook)
 
 	if (time - firstInstructionAt) > endAt:
 		break
