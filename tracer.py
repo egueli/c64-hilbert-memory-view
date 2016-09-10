@@ -228,9 +228,12 @@ def outputInstructionAccesses(conn, time, instruction):
 
 addressHooks = [1]
 
-def outputAddressValue(address):
+def outputAddressValue(conn, address):
 	value = readMemory(address)
-	print "%d %04x v %02x" % (int(time), address, value)
+	conn.execute(
+		'INSERT INTO memory_values(timestamp, address, value) VALUES (?, ?, ?)',
+		(int(time), address, value)
+	)
 
 
 def processStepLines(conn, lines):
@@ -254,7 +257,7 @@ def processStepLines(conn, lines):
 	for access in parsed.accesses:
 		for addressHook in addressHooks:
 			if access.address == addressHook:
-				outputAddressValue(addressHook)
+				outputAddressValue(conn, addressHook)
 
 	return int(time)
 
@@ -306,6 +309,9 @@ conn = sqlite3.connect(outFile)
 conn.execute('''CREATE TABLE accesses
 	              (id integer primary key autoincrement, timestamp integer, type integer, address integer)
 ''')
+conn.execute('''CREATE TABLE memory_values
+				  (id integer primary key autoincrement, timestamp integer, address integer, value integer)
+''')
 
 talker = ViceRemoteMonitorTalker()
 
@@ -317,7 +323,7 @@ while True:
 	if not firstInstructionAt:
 		firstInstructionAt = time
 		for addressHook in addressHooks:
-			outputAddressValue(addressHook)
+			outputAddressValue(conn, addressHook)
 
 	if (time - firstInstructionAt) > endAt:
 		break
@@ -335,6 +341,7 @@ while True:
 
 conn.commit()
 conn.execute("CREATE INDEX timestamp ON accesses (timestamp)")
+conn.execute("CREATE INDEX timestamp ON memory_values (timestamp)")
 conn.close()
 
 talker.close()
