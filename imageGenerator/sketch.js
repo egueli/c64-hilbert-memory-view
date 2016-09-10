@@ -1,15 +1,18 @@
 // configuration
-var traceFileName = 'assets/traces/reset.ctrace';
-var screenshotsBasePath = 'assets/traces/';
+var traceFileName = 'assets/traces/terry/terry.ctrace';
+var screenshotsBasePath = 'assets/traces/terry/';
 var mapScale = 2;
-var timeScale = 1;
 var startAtTime = 0;
 var stopAtTime = 100000;
 var saveAllFrames = false;
 var showText = true;
-var fps = 60;
+var fps = 50;
 var traceClearAlpha = 20;
-
+var frameLimit = 5000;
+var startTimeScale = 1;
+var startTimeScaleAt = 10000000;
+var endTimeScale = 1000;
+var endTimeScaleAt = 12000000;
 
 // global variables
 var endFrameNum = 0;
@@ -55,18 +58,32 @@ function setup() {
 
 function processTrace() {
   console.log("will read " + trace.length + " lines")
+  var firstTimestamp = 0;
+  var frameNum = 0;
+  var nextFrameAt = 0;
   for (var i=0; i<trace.length; i++) {
     var line = trace[i];
     var tokens = line.split(" ");
     var timestamp = tokens[0];
+    if (!firstTimestamp) {
+      firstTimestamp = timestamp;
+      console.log("first timestamp:", firstTimestamp);
+    }
+    timestamp = timestamp - firstTimestamp;
 
-
-    var frameNum = Math.floor(timestamp / microsecsPerFrame * timeScale);
-    var frame;
-    if (!frames[frameNum]) {
+    if (timestamp >= nextFrameAt) {
+      frameNum++;
+      if (frameNum > frameLimit) break;
+      var logStartTS = log(startTimeScale);
+      var logEndTS = log(endTimeScale);
+      var logTimeScale = map(constrain(timestamp, startTimeScaleAt, endTimeScaleAt), startTimeScaleAt, endTimeScaleAt, logStartTS, logEndTS);
+      var currentTimeScale = exp(logTimeScale);
+      nextFrameAt = timestamp + microsecsPerFrame / currentTimeScale;
+      //console.log("line", i, "timestamp", timestamp, "new frame", frameNum, " next frame at", nextFrameAt, "time scale", currentTimeScale);
       frame = {
         timestamp: timestamp,
         time: timestamp / 1000000,
+        timeScale: currentTimeScale,
         reads: [],
         writes: [],
         executes: [],
@@ -195,7 +212,7 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 }
 
 
-var startFrameNum = startAtTime * fps * timeScale;
+var startFrameNum = startAtTime * fps;
 var frameNum = startFrameNum;
 var currentScreenshotImage;
 var loadingScreenshot;
@@ -203,7 +220,7 @@ var saveFrameSeq = 0;
 
 function draw() {
   if (frameNum > endFrameNum - firstFrameNum) {
-    console.log("end of trace, looping");
+    console.log("end of trace, looping; frameNum", frameNum, "firstFrameNum", firstFrameNum, "endFrameNum", endFrameNum);
     frameNum = startFrameNum;
     firstLoop = false;
     return;
@@ -263,11 +280,15 @@ function draw() {
     fill(255);
     textSize(40);
     textAlign(RIGHT, BOTTOM);
+
+    text("speed " + int(frameData.timeScale), 0, 0, width, height - 50);
+
     var tFrames = int(frameData.time * fps) % fps;
     var tSeconds = int(frameData.time) % 60;
     var tMinutes = int(frameData.time / 60) % 60;
     var tHours = int(frameData.time / 3600);
-    var timecode = tHours + ":" + padToTwo(tMinutes) + ":" + padToTwo(tSeconds) + ":" + padToTwo(tFrames);
+    var tMicros = int(frameData.time * fps * microsecsPerFrame) % microsecsPerFrame;
+    var timecode = tHours + ":" + pad(tMinutes, 2) + ":" + pad(tSeconds, 2) + ":" + pad(tFrames, 2) + ":" + pad(tMicros, 5);
     text(timecode, 0, 0, width, height);
   }
 
@@ -279,8 +300,8 @@ function draw() {
   frameNum++;
 }
 
-function padToTwo(number) {
-  if (number<100) { number = ("0"+number).slice(-2); }
+function pad(number,d) {
+  if (number<pow(10, d)) { number = ("0"+number).slice(-d); }
   return number;
 }
 
