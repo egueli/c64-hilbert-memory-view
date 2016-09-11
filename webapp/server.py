@@ -9,6 +9,17 @@ app = Flask(__name__)
 
 conn = sqlite3.connect('test.sqlite')
 
+@app.route('/')
+def home():
+    print "root!"
+    return app.send_static_file('index.html')
+
+@app.route('/<path:path>')
+def static_proxy(path):
+  # send_static_file will guess the correct MIME type
+  return app.send_static_file(path)
+
+
 @app.route("/info")
 def getTraceInfo():
     first = conn.execute('SELECT timestamp FROM accesses ORDER BY timestamp ASC LIMIT 1').fetchone()[0]
