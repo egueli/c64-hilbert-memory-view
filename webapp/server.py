@@ -2,10 +2,16 @@
 
 import flask
 import sqlite3
+import json
 from flask import Flask
 from flask import request
+from flask_profile import Profiler
+
+profiler = False
 
 app = Flask(__name__)
+app.debug = profiler
+Profiler(app)
 
 conn = sqlite3.connect('test.sqlite')
 
@@ -28,7 +34,11 @@ def getTraceInfo():
         'firstTimestamp': first,
         'lastTimestamp': last
     }
-    return flask.jsonify(**out)
+    if profiler:
+        return "<html><body>" + json.dumps(out) + "</body></html>"
+    else:
+        return flask.jsonify(**out)
+
 
 @app.route("/trace")
 def getTraceData():
@@ -49,7 +59,10 @@ def getTraceData():
         accesses[accessType] = list(accessesRaw[i])
 
     out = { 'accesses': accesses }
-    return flask.jsonify(**out)
+    if profiler:
+        return "<html><body>" + json.dumps(out) + "</body></html>"
+    else:
+        return flask.jsonify(**out)
 
 if __name__ == "__main__":
     app.run()
