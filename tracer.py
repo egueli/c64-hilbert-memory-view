@@ -174,7 +174,7 @@ def parseInstruction(instruction, ipHex, aHex, xHex, yHex, time):
 
 	matchIndexedIndirect = re.search('^(...) \(\$([0-9A-F]{2}),X\)', instruction)
 	if matchIndexedIndirect:
-		zpBaseAddressHex = matchIndirectIndexed.group(2)
+		zpBaseAddressHex = matchIndexedIndirect.group(2)
 		zpBaseAddress = int(zpBaseAddressHex, 16)
 		zpAddress = (zpBaseAddress + int(xHex, 16) % 256)
 		out.addRead(zpAddress)
