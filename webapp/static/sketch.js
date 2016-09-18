@@ -34,5 +34,8 @@ function onDataForFrame(data) {
 	if (currentTimestamp >= traceInfo.lastTimestamp)
 		reset();
 
-
+	updateTraceGraphics(data);
+	blendMode(ADD);
+	drawTraceGraphics();
+	blendMode(BLEND);
 }
