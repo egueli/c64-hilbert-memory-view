@@ -1,4 +1,9 @@
 var traceGraphics;
+var density = window.devicePixelRatio; // happens to be 2 on os x with retina display
+
+function setupTraceGraphics() {
+  traceGraphics = createGraphics(512 * density, 512 * density);
+}
 
 function updateTraceGraphics(frameData) {
 	

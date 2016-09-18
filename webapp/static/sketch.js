@@ -6,6 +6,7 @@ var traceInfo;
 function preload() {
 	traceInfo = loadJSON("/info");
 	setFrameRate(50);
+	setupTraceGraphics();
 }
 
 function setup() {
