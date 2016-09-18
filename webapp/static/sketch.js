@@ -10,7 +10,7 @@ function preload() {
 
 function setup() {
 	console.log(traceInfo);
-	currentTimestamp = traceInfo.firstTimestamp;
+	reset();
 }
 
 var needData = true;
@@ -22,7 +22,17 @@ function draw() {
 	}
 }
 
+function reset() {
+	currentTimestamp = traceInfo.firstTimestamp;
+	
+}
+
 function onDataForFrame(data) {
 	needData = true;
 	console.log(data);
+	currentTimestamp += microsecondsPerFrame;
+	if (currentTimestamp >= traceInfo.lastTimestamp)
+		reset();
+
+
 }
