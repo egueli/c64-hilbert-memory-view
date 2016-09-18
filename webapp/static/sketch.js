@@ -1,4 +1,6 @@
-var microsecondsPerFrame = 20000;
+var microsecondsPerFrame = 200;
+var oneStepOnly = true;
+
 var screenshotWidth = 384;
 var screenshotHeight = 272;
 
@@ -31,8 +33,9 @@ function reset() {
 }
 
 function onDataForFrame(data) {
-	// needData = true;
-	console.log(data);
+	if (!oneStepOnly) {
+		needData = true;
+	}
 	currentTimestamp += microsecondsPerFrame;
 	if (currentTimestamp >= traceInfo.lastTimestamp)
 		reset();

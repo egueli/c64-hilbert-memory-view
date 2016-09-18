@@ -29,7 +29,6 @@ function updateTraceGraphics(frameData) {
 }
 
 function drawAccesses(tg, accesses) {
-	console.log('drawAccesses', accesses)
 	for (var i = 0; i < accesses.length; i++) {
 		var address = accesses[i];
 		var xy = hilbert.d2xy(8, address);
