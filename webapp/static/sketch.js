@@ -1,7 +1,9 @@
-var currentTimestamp;
 var microsecondsPerFrame = 20000;
+var screenshotWidth = 384;
+var screenshotHeight = 272;
 
 var traceInfo;
+var currentTimestamp;
 
 function preload() {
 	traceInfo = loadJSON("/info");
@@ -10,7 +12,7 @@ function preload() {
 }
 
 function setup() {
-	console.log(traceInfo);
+	createCanvas(512 + screenshotWidth, 512);
 	reset();
 }
 
@@ -35,6 +37,7 @@ function onDataForFrame(data) {
 	if (currentTimestamp >= traceInfo.lastTimestamp)
 		reset();
 
+	background(0);
 	updateTraceGraphics(data);
 	blendMode(ADD);
 	drawTraceGraphics();
