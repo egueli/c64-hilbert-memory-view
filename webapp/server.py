@@ -44,7 +44,7 @@ def getTraceInfo():
 def getTraceData():
     fromTime = int(request.args.get('from'))
     toTime = int(request.args.get('to')) + 1
-    accCursor = conn.execute('SELECT type, address FROM accesses WHERE timestamp >= ? AND timestamp < ? ORDER BY timestamp ASC', (fromTime, toTime))
+    accCursor = conn.execute('SELECT type, address FROM accesses WHERE timestamp >= ? AND timestamp < ?', (fromTime, toTime))
     accessesRaw = [{}, {}, {}]
     while True:
         fetched = accCursor.fetchmany(toTime - fromTime)
