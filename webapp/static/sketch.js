@@ -28,7 +28,7 @@ function reset() {
 }
 
 function onDataForFrame(data) {
-	needData = true;
+	// needData = true;
 	console.log(data);
 	currentTimestamp += microsecondsPerFrame;
 	if (currentTimestamp >= traceInfo.lastTimestamp)
