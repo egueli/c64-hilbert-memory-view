@@ -15,6 +15,7 @@ function preload() {
 
 function setup() {
 	createCanvas(512 + screenshotWidth, 512);
+	mapSetup();
 	reset();
 }
 
@@ -40,8 +41,10 @@ function onDataForFrame(data) {
 	if (currentTimestamp >= traceInfo.lastTimestamp)
 		reset();
 
-	background(0);
 	updateTraceGraphics(data);
+
+	background(0);
+	drawMap();
 	blendMode(ADD);
 	drawTraceGraphics();
 	blendMode(BLEND);
