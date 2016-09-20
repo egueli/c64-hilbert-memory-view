@@ -44,7 +44,20 @@ def getTraceInfo():
 def getTraceData():
     fromTime = int(request.args.get('from'))
     toTime = int(request.args.get('to')) + 1
-    accCursor = conn.execute('SELECT type, address FROM accesses WHERE timestamp >= ? AND timestamp < ?', (fromTime, toTime))
+    accesses = get_accesses(fromTime, toTime)
+
+    out = {
+        'accesses': accesses
+    }
+    if profiler:
+        return "<html><body>" + json.dumps(out) + "</body></html>"
+    else:
+        return flask.jsonify(**out)
+
+
+def get_accesses(fromTime, toTime):
+    accCursor = conn.execute('SELECT type, address FROM accesses WHERE timestamp >= ? AND timestamp < ?',
+                             (fromTime, toTime))
     accessesRaw = [{}, {}, {}]
     while True:
         fetched = accCursor.fetchmany(toTime - fromTime)
@@ -61,12 +74,8 @@ def getTraceData():
     for i in range(0, 3):
         accessType = ['read', 'write', 'execute'][i]
         accesses[accessType] = list(accessesRaw[i])
+    return accesses
 
-    out = { 'accesses': accesses }
-    if profiler:
-        return "<html><body>" + json.dumps(out) + "</body></html>"
-    else:
-        return flask.jsonify(**out)
 
 if __name__ == "__main__":
     app.run()
