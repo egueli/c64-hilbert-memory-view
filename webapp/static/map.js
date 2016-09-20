@@ -3,6 +3,7 @@ var romColor = '#000080';
 var ioColor = '#800000';
 
 var bankLayerNames = ['ram', 'basic', 'io', 'char', 'kernal'];
+var lastBanks = { ram: true, basic: true, io: true, char: false, kernal: true };
 var mapGraphics;
 
 
@@ -64,18 +65,25 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 	callback(x, y, size);
 }
 
+function updateMap(frameData) {
+  if ("1" in frameData.memoryValues) {
+  	value = frameData.memoryValues["1"]
+    // https://www.c64-wiki.com/index.php/Bank_Switching
+    var loram = (value & 1) != 0;
+    var hiram = (value & 2) != 0;
+    var charen = (value & 4) != 0;
+    lastBanks.ram = true;
+    lastBanks.basic = hiram && loram;
+    lastBanks.io = charen && (hiram || loram);
+    lastBanks.char = !charen && (hiram || loram);
+    lastBanks.kernal = hiram;
+  }
+}
+
 function drawMap() {
-	var frameData = {
-		banks: {
-			'ram': true, 
-			'basic': true, 
-			'kernal': true,
-			'char': false,
-			'io': true,
-		}};
 	for (var i=0; i<bankLayerNames.length; i++) {
 		var bankLayerName = bankLayerNames[i];
-		if (frameData.banks[bankLayerName]) {
+		if (lastBanks[bankLayerName]) {
 			var bankLayer = mapGraphics[bankLayerName];
 			image(bankLayer, 0, 0, 512 * density, 512 * density, 0, 0, 512, 512);
 		}

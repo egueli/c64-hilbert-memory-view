@@ -30,7 +30,6 @@ function draw() {
 
 function reset() {
 	currentTimestamp = traceInfo.firstTimestamp;
-	
 }
 
 function onDataForFrame(data) {
@@ -41,6 +40,7 @@ function onDataForFrame(data) {
 	if (currentTimestamp >= traceInfo.lastTimestamp)
 		reset();
 
+	updateMap(data)
 	updateTraceGraphics(data);
 
 	background(0);
