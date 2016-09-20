@@ -47,9 +47,11 @@ def get_trace_data():
     from_time = int(request.args.get('from'))
     to_time = int(request.args.get('to')) + 1
     accesses = get_accesses(from_time, to_time)
+    memory_values = get_memory_values(from_time, to_time)
 
     out = {
-        'accesses': accesses
+        'accesses': accesses,
+        'memoryValues': memory_values
     }
     if profiler:
         return "<html><body>" + json.dumps(out) + "</body></html>"
@@ -59,7 +61,7 @@ def get_trace_data():
 
 def get_accesses(from_time, to_time):
     acc_cursor = conn.execute('SELECT type, address FROM accesses WHERE timestamp >= ? AND timestamp < ?',
-                             (from_time, to_time))
+                              (from_time, to_time))
     accesses_raw = [{}, {}, {}]
     while True:
         fetched = acc_cursor.fetchmany(to_time - from_time)
@@ -79,6 +81,24 @@ def get_accesses(from_time, to_time):
     return accesses
 
 
+def get_memory_values(from_time, to_time):
+    val_cursor = conn.execute(
+        'SELECT timestamp, address, value FROM memory_values WHERE timestamp >= ? AND timestamp < ?',
+        (from_time, to_time))
+    memory_values_raw = {}
+    for row in val_cursor.fetchall():
+        timestamp, address, value = row
+        if (address not in memory_values_raw) or (memory_values_raw[address]['timestamp'] < timestamp):
+            memory_values_raw[address] = {
+                'timestamp': timestamp,
+                'value': value
+            }
+
+    memory_values = []
+    for address, data in memory_values_raw.iteritems():
+
+        memory_values.append({address: data['value']})
+    return memory_values
+
 if __name__ == "__main__":
     app.run()
-
