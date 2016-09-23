@@ -66,18 +66,21 @@ function hilbertBlock(maxLevel, location, sizeLinear, callback) {
 }
 
 function updateMap(frameData) {
-  if ("1" in frameData.memoryValues) {
-  	value = frameData.memoryValues["1"]
-    // https://www.c64-wiki.com/index.php/Bank_Switching
-    var loram = (value & 1) != 0;
-    var hiram = (value & 2) != 0;
-    var charen = (value & 4) != 0;
-    lastBanks.ram = true;
-    lastBanks.basic = hiram && loram;
-    lastBanks.io = charen && (hiram || loram);
-    lastBanks.char = !charen && (hiram || loram);
-    lastBanks.kernal = hiram;
-  }
+	for (var i = frameData.memoryValues.length - 1; i >= 0; i--) {
+		var memoryValue = frameData.memoryValues[i];
+		if ("1" in memoryValue) {
+			var value = memoryValue["1"]
+		    // https://www.c64-wiki.com/index.php/Bank_Switching
+		    var loram = (value & 1) != 0;
+		    var hiram = (value & 2) != 0;
+		    var charen = (value & 4) != 0;
+		    lastBanks.ram = true;
+		    lastBanks.basic = hiram && loram;
+		    lastBanks.io = charen && (hiram || loram);
+		    lastBanks.char = !charen && (hiram || loram);
+		    lastBanks.kernal = hiram;
+		}
+	}
 }
 
 function drawMap() {
