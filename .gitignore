@@ -3,3 +3,4 @@ imageGenerator/assets/traces
 screenshot_*.png
 *.pyc
 *.sqlite
+.idea
