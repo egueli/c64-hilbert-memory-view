@@ -13,7 +13,7 @@ app = Flask(__name__)
 app.debug = profiler
 Profiler(app)
 
-conn = sqlite3.connect('test.sqlite')
+conn = sqlite3.connect('donkey_kong.sqlite')
 
 
 @app.route('/')
